@@ -1,0 +1,114 @@
+<div class="register-container">
+  <div class="register-card">
+    <h2>Register</h2>
+    
+    <div class="user-type-selector">
+      <button 
+        [class.active]="userType === 'STUDENT'" 
+        (click)="onUserTypeChange('STUDENT')">
+        Student
+      </button>
+      <button 
+        [class.active]="userType === 'MANAGER'" 
+        (click)="onUserTypeChange('MANAGER')">
+        Manager
+      </button>
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      <!-- Student Fields -->
+      <ng-container *ngIf="userType === 'STUDENT'">
+        <div class="form-group">
+          <label>Student ID</label>
+          <input formControlName="studentId" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input formControlName="name" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" formControlName="email" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input formControlName="phoneNumber" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Address</label>
+          <textarea formControlName="address" class="form-control"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <input formControlName="department" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Batch</label>
+          <input formControlName="batch" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Gender</label>
+          <select formControlName="gender" class="form-control">
+            <option value="MALE">Male</option>
+            <option value="FEMALE">Female</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Shift</label>
+          <input formControlName="shift" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" formControlName="password" class="form-control">
+        </div>
+      </ng-container>
+
+      <!-- Manager Fields -->
+      <ng-container *ngIf="userType === 'MANAGER'">
+        <div class="form-group">
+          <label>First Name</label>
+          <input formControlName="firstname" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input formControlName="lastname" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" formControlName="email" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" formControlName="password" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Employee ID</label>
+          <input formControlName="employeeId" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <input formControlName="department" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Position</label>
+          <input formControlName="position" class="form-control">
+        </div>
+      </ng-container>
+
+      <div class="success-message" *ngIf="successMessage">
+        {{ successMessage }}
+      </div>
+      <div class="error-message" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <button type="submit" [disabled]="loading || registerForm.invalid" class="btn-register">
+        {{ loading ? 'Registering...' : 'Register' }}
+      </button>
+    </form>
+
+    <div class="login-link">
+      <p>Already have an account? <a routerLink="/login">Login here</a></p>
+    </div>
+  </div>
+</div>

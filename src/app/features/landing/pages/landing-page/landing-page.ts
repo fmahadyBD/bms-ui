@@ -1,22 +1,25 @@
 import { Component } from '@angular/core';
-import { LandingNavbar } from '../../components/landing-navbar/landing-navbar';
-import { HeroSlider } from '../../components/hero-slider/hero-slider';
-import { FeaturesSection } from '../../components/features-section/features-section';
-import { StatsSection } from '../../components/stats-section/stats-section';
-import { CtaSection } from '../../components/cta-section/cta-section';
-import { Footer } from '../../../../shared/components/footer/footer';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule } from '@angular/forms';
+import { LoginComponent } from '../../../auth/components/login/login';
+import { RegisterComponent } from '../../../auth/components/register/register';
 
 @Component({
   selector: 'app-landing-page',
+  standalone: true,
   imports: [
-    LandingNavbar,
-    HeroSlider,
-    FeaturesSection,
-    StatsSection,
-    CtaSection,
-    Footer
+    CommonModule,
+    ReactiveFormsModule,
+    LoginComponent,
+    RegisterComponent
   ],
   templateUrl: './landing-page.html',
   styleUrl: './landing-page.css',
 })
-export class LandingPage {}
+export class LandingPage {
+  showLogin = true;
+  
+  toggleForm() {
+    this.showLogin = !this.showLogin;
+  }
+}

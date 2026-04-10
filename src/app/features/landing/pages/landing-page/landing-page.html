@@ -1,17 +1,31 @@
-<!-- Landing Navbar -->
-<app-landing-navbar></app-landing-navbar>
-
-<!-- Hero Slider -->
-<app-hero-slider></app-hero-slider>
-
-<!-- Features Section -->
-<app-features-section></app-features-section>
-
-<!-- Stats Section -->
-<app-stats-section></app-stats-section>
-
-<!-- CTA Section -->
-<app-cta-section></app-cta-section>
-
-<!-- Footer -->
-<app-footer></app-footer>
+<div class="landing-container">
+  <div class="hero-section">
+    <div class="hero-content">
+      <h1>Welcome to BMS</h1>
+      <p>University Book Management System</p>
+    </div>
+    
+    <div class="auth-container">
+      <div class="auth-tabs">
+        <button 
+          [class.active]="showLogin" 
+          (click)="showLogin = true">
+          Login
+        </button>
+        <button 
+          [class.active]="!showLogin" 
+          (click)="showLogin = false">
+          Register
+        </button>
+      </div>
+      
+      <div *ngIf="showLogin" class="auth-form">
+        <app-login></app-login>
+      </div>
+      
+      <div *ngIf="!showLogin" class="auth-form">
+        <app-register></app-register>
+      </div>
+    </div>
+  </div>
+</div>
