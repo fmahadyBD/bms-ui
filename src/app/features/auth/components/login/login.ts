@@ -35,22 +35,20 @@ export class LoginComponent {
     this.loading = true;
     this.errorMessage = '';
 
+    // In your login component, update the navigation:
     this.authService.login(this.loginForm.value).subscribe({
-      next: (response) => {
-        console.log('Login successful:', response);
-        this.router.navigate(['/']);
+      next: (response: any) => {
+        const userType = response.userType;
+        if (userType === 'STUDENT') {
+          this.router.navigate(['/student-dashboard']);
+        } else if (userType === 'MANAGER') {
+          this.router.navigate(['/manager-dashboard']);
+        } else {
+          this.router.navigate(['/']);
+        }
       },
       error: (error) => {
-        console.error('Login error details:', error);
-        if (error.message.includes('Cannot connect')) {
-          this.errorMessage = 'Cannot connect to server. Please make sure the backend is running.';
-        } else if (error.status === 401) {
-          this.errorMessage = 'Invalid email or password';
-        } else if (error.status === 403) {
-          this.errorMessage = 'Access denied. Please contact support.';
-        } else {
-          this.errorMessage = error.message || 'Login failed. Please try again.';
-        }
+        this.errorMessage = 'Invalid email or password';
         this.loading = false;
       }
     });

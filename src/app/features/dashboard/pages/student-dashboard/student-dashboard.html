@@ -1,0 +1,91 @@
+<div class="dashboard-container">
+  <div class="sidebar">
+    <div class="logo">
+      <h2>BMS Student</h2>
+    </div>
+    <nav class="nav-menu">
+      <button (click)="changeTab('profile')" [class.active]="activeTab === 'profile'">
+        📊 My Profile
+      </button>
+      <button (click)="changeTab('routines')" [class.active]="activeTab === 'routines'">
+        📅 My Routines
+      </button>
+      <button (click)="changeTab('change-password')" [class.active]="activeTab === 'change-password'">
+        🔑 Change Password
+      </button>
+      <button (click)="logout()" class="logout-btn">
+        🚪 Logout
+      </button>
+    </nav>
+  </div>
+
+  <div class="main-content">
+    <div *ngIf="activeTab === 'profile'" class="tab-content">
+      <div class="card">
+        <h2>Student Profile</h2>
+        <div *ngIf="loading">Loading...</div>
+        <div *ngIf="!loading && studentData" class="profile-info">
+          <div class="info-row">
+            <label>Student ID:</label>
+            <span>{{studentData.studentId}}</span>
+          </div>
+          <div class="info-row">
+            <label>Name:</label>
+            <span>{{studentData.name}}</span>
+          </div>
+          <div class="info-row">
+            <label>Email:</label>
+            <span>{{studentData.email}}</span>
+          </div>
+          <div class="info-row">
+            <label>Phone:</label>
+            <span>{{studentData.phoneNumber}}</span>
+          </div>
+          <div class="info-row">
+            <label>Department:</label>
+            <span>{{studentData.department}}</span>
+          </div>
+          <div class="info-row">
+            <label>Batch:</label>
+            <span>{{studentData.batch}}</span>
+          </div>
+          <div class="info-row">
+            <label>Shift:</label>
+            <span>{{studentData.shift}}</span>
+          </div>
+          <div class="info-row">
+            <label>Address:</label>
+            <span>{{studentData.address}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="activeTab === 'routines'" class="tab-content">
+      <div class="card">
+        <h2>My Routines</h2>
+        <div class="routines-list">
+          <div *ngFor="let routine of routines" class="routine-card">
+            <div class="routine-header">
+              <h3>{{routine.courseName}} ({{routine.courseCode}})</h3>
+              <span class="day-badge">{{routine.day}}</span>
+            </div>
+            <div class="routine-details">
+              <p><strong>Teacher:</strong> {{routine.teacherName}}</p>
+              <p><strong>Time:</strong> {{routine.startTime}} - {{routine.endTime}}</p>
+              <p><strong>Room:</strong> {{routine.roomNumber}}</p>
+              <p><strong>Type:</strong> {{routine.routineType}}</p>
+            </div>
+          </div>
+          <div *ngIf="routines.length === 0" class="no-data">
+            No routines found
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="activeTab === 'change-password'" class="tab-content">
+      <app-change-password></app-change-password>
+    </div>
+  </div>
+</div>
