@@ -6,9 +6,10 @@ import { ChangePasswordComponent } from '../../components/change-password/change
 
 @Component({
   selector: 'app-student-dashboard',
-  standalone: false,
-  templateUrl: './student-dashboard.component.html',
-  styleUrls: ['./student-dashboard.component.css']
+  standalone: true,  // Make it standalone
+  imports: [CommonModule, ChangePasswordComponent],  // Add imports
+  templateUrl: './student-dashboard.html',  // Fix template URL
+  styleUrls: ['./student-dashboard.css']
 })
 export class StudentDashboardComponent implements OnInit {
   studentData: any = null;

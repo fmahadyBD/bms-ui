@@ -1,11 +1,14 @@
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 import { StudentService } from '../../services/student';
 
 @Component({
   selector: 'app-change-password',
-  templateUrl: './change-password.component.html',
-  styleUrls: ['./change-password.component.css']
+  standalone: true,  // Make it standalone
+  imports: [CommonModule, ReactiveFormsModule],  // Add imports
+  templateUrl: './change-password.html',  // Fix template URL (remove .component)
+  styleUrls: ['./change-password.css']
 })
 export class ChangePasswordComponent {
   passwordForm: FormGroup;
@@ -49,10 +52,20 @@ export class ChangePasswordComponent {
         this.successMessage = 'Password changed successfully!';
         this.passwordForm.reset();
         this.loading = false;
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          this.successMessage = '';
+        }, 3000);
       },
       error: (error) => {
         this.errorMessage = 'Failed to change password. Please check your old password.';
         this.loading = false;
+        
+        // Clear error message after 3 seconds
+        setTimeout(() => {
+          this.errorMessage = '';
+        }, 3000);
       }
     });
   }

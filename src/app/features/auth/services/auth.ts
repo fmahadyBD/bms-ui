@@ -1,49 +1,40 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, tap, catchError, throwError } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private baseUrl = 'http://localhost:8080'; // Make sure this matches your backend
+  private baseUrl = 'http://localhost:8080';
   private tokenKey = 'jwt_token';
   private userTypeKey = 'user_type';
 
   constructor(private http: HttpClient, private router: Router) {}
 
   registerStudent(userData: any): Observable<any> {
-    console.log('Registering student:', userData);
     return this.http.post(`${this.baseUrl}/auth/register/student`, userData, {
       responseType: 'text'
-    }).pipe(
-      catchError(this.handleError)
-    );
+    });
   }
 
   registerManager(userData: any): Observable<any> {
-    console.log('Registering manager:', userData);
     return this.http.post(`${this.baseUrl}/auth/register/manager`, userData, {
       responseType: 'text'
-    }).pipe(
-      catchError(this.handleError)
-    );
+    });
   }
 
   login(credentials: any): Observable<any> {
-    console.log('Logging in with:', credentials.email);
     return this.http.post(`${this.baseUrl}/auth/authenticate`, credentials)
       .pipe(
         tap((response: any) => {
-          console.log('Login response:', response);
           if (response.token) {
             this.setToken(response.token);
             this.setUserType(response.userType);
-            console.log('Token saved successfully');
+            this.setTokenExpiry(); // Store token expiry
           }
-        }),
-        catchError(this.handleError)
+        })
       );
   }
 
@@ -55,13 +46,30 @@ export class AuthService {
       tap(() => {
         this.clearStorage();
         this.router.navigate(['/']);
-      }),
-      catchError(this.handleError)
+      })
     );
   }
 
   getToken(): string | null {
+    // Check if token is expired before returning
+    if (this.isTokenExpired()) {
+      this.clearStorage();
+      this.router.navigate(['/']);
+      return null;
+    }
     return localStorage.getItem(this.tokenKey);
+  }
+
+  private setTokenExpiry(): void {
+    // JWT tokens typically expire after 24 hours
+    const expiryTime = Date.now() + (24 * 60 * 60 * 1000);
+    localStorage.setItem('token_expiry', expiryTime.toString());
+  }
+
+  private isTokenExpired(): boolean {
+    const expiry = localStorage.getItem('token_expiry');
+    if (!expiry) return false;
+    return Date.now() > parseInt(expiry);
   }
 
   private setToken(token: string): void {
@@ -83,24 +91,7 @@ export class AuthService {
   private clearStorage(): void {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userTypeKey);
-  }
-
-  private handleError(error: HttpErrorResponse) {
-    let errorMessage = 'An error occurred';
-    
-    if (error.error instanceof ErrorEvent) {
-      // Client-side error
-      errorMessage = `Error: ${error.error.message}`;
-    } else {
-      // Server-side error
-      if (error.status === 0) {
-        errorMessage = 'Cannot connect to server. Please make sure the backend is running on http://localhost:8080';
-      } else {
-        errorMessage = `Server returned code ${error.status}: ${error.message}`;
-      }
-    }
-    
-    console.error('API Error:', errorMessage, error);
-    return throwError(() => new Error(errorMessage));
+    localStorage.removeItem('token_expiry');
+    localStorage.removeItem('user_email');
   }
 }

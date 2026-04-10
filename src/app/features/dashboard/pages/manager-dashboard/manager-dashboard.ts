@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { StudentService } from '../../services/student';
 import { RouteService } from '../../services/route';
 import { RoutineService } from '../../services/routine';
@@ -8,27 +8,28 @@ import { AuthService } from '../../../auth/services/auth';
 
 @Component({
   selector: 'app-manager-dashboard',
-  standalone: false,
-  templateUrl: './manager-dashboard.component.html',
-  styleUrls: ['./manager-dashboard.component.css']
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  templateUrl: './manager-dashboard.html',
+  styleUrls: ['./manager-dashboard.css']
 })
 export class ManagerDashboardComponent implements OnInit {
   activeTab = 'students';
-  
+
   // Student related
   students: any[] = [];
   selectedStudent: any = null;
   loading = false;
-  
+
   // Route related
   routes: any[] = [];
   routeForm: FormGroup;
   selectedRoute: any = null;
-  
+
   // Routine related
   routineForm: FormGroup;
   routines: any[] = [];
-  
+
   // Search
   searchEmail = '';
   searchPhone = '';
@@ -59,19 +60,28 @@ export class ManagerDashboardComponent implements OnInit {
 
   // ============ STUDENT MANAGEMENT ============
   loadStudents() {
+    console.log('Loading students...');
     this.loading = true;
+
+    // Check if token exists
+    const token = localStorage.getItem('jwt_token');
+    console.log('Token exists:', !!token);
+
     this.studentService.getAllStudents().subscribe({
       next: (data) => {
+        console.log('Students data received:', data);
+        console.log('Number of students:', data?.length);
         this.students = data;
         this.loading = false;
       },
       error: (error) => {
         console.error('Error loading students:', error);
+        console.error('Error details:', error.message);
         this.loading = false;
+        alert(`Failed to load students: ${error.message}`);
       }
     });
   }
-
   viewStudent(student: any) {
     this.selectedStudent = student;
   }
@@ -87,19 +97,27 @@ export class ManagerDashboardComponent implements OnInit {
           alert('Student blocked successfully');
           this.loadStudents();
         },
-        error: (error) => console.error('Error blocking student:', error)
+        error: (error) => {
+          console.error('Error blocking student:', error);
+          alert('Failed to block student');
+        }
       });
     }
   }
 
   unblockStudent(studentId: string) {
-    this.studentService.unblockStudent(studentId).subscribe({
-      next: () => {
-        alert('Student unblocked successfully');
-        this.loadStudents();
-      },
-      error: (error) => console.error('Error unblocking student:', error)
-    });
+    if (confirm('Are you sure you want to unblock this student?')) {
+      this.studentService.unblockStudent(studentId).subscribe({
+        next: () => {
+          alert('Student unblocked successfully');
+          this.loadStudents();
+        },
+        error: (error) => {
+          console.error('Error unblocking student:', error);
+          alert('Failed to unblock student');
+        }
+      });
+    }
   }
 
   deleteStudent(studentId: string) {
@@ -109,44 +127,66 @@ export class ManagerDashboardComponent implements OnInit {
           alert('Student deleted successfully');
           this.loadStudents();
         },
-        error: (error) => console.error('Error deleting student:', error)
+        error: (error) => {
+          console.error('Error deleting student:', error);
+          alert('Failed to delete student');
+        }
       });
     }
   }
 
-  assignRouteToStudent(studentId: string, routeId: number) {
-    const route = prompt('Enter Route ID to assign:');
-    if (route) {
-      this.studentService.assignRoute(studentId, parseInt(route)).subscribe({
+  assignRouteToStudent(studentId: string) {
+    const routeId = prompt('Enter Route ID to assign:');
+    if (routeId && !isNaN(parseInt(routeId))) {
+      this.studentService.assignRoute(studentId, parseInt(routeId)).subscribe({
         next: () => {
           alert('Route assigned successfully');
           this.loadStudents();
         },
-        error: (error) => console.error('Error assigning route:', error)
+        error: (error) => {
+          console.error('Error assigning route:', error);
+          alert('Failed to assign route');
+        }
       });
+    } else if (routeId) {
+      alert('Please enter a valid Route ID (number)');
     }
   }
 
   // ============ SEARCH STUDENTS ============
   searchByEmail() {
-    if (!this.searchEmail) return;
+    if (!this.searchEmail) {
+      alert('Please enter an email address');
+      return;
+    }
     this.studentService.searchByEmail(this.searchEmail).subscribe({
       next: (data) => {
         this.searchResult = data;
         alert(`Student found: ${data.name} (${data.studentId})`);
+        this.searchEmail = '';
       },
-      error: (error) => alert('Student not found')
+      error: (error) => {
+        console.error('Error searching student:', error);
+        alert('Student not found');
+      }
     });
   }
 
   searchByPhone() {
-    if (!this.searchPhone) return;
+    if (!this.searchPhone) {
+      alert('Please enter a phone number');
+      return;
+    }
     this.studentService.searchByPhone(this.searchPhone).subscribe({
       next: (data) => {
         this.searchResult = data;
         alert(`Student found: ${data.name} (${data.studentId})`);
+        this.searchPhone = '';
       },
-      error: (error) => alert('Student not found')
+      error: (error) => {
+        console.error('Error searching student:', error);
+        alert('Student not found');
+      }
     });
   }
 
@@ -166,31 +206,45 @@ export class ManagerDashboardComponent implements OnInit {
       next: (data) => {
         this.routes = data;
       },
-      error: (error) => console.error('Error loading routes:', error)
+      error: (error) => {
+        console.error('Error loading routes:', error);
+        alert('Failed to load routes');
+      }
     });
   }
 
   createRoute() {
-    if (this.routeForm.invalid) return;
-    
+    if (this.routeForm.invalid) {
+      alert('Please fill all required fields');
+      return;
+    }
+
     this.routeService.createRoute(this.routeForm.value).subscribe({
       next: () => {
         alert('Route created successfully');
         this.routeForm.reset();
         this.loadRoutes();
       },
-      error: (error) => console.error('Error creating route:', error)
+      error: (error) => {
+        console.error('Error creating route:', error);
+        alert('Failed to create route');
+      }
     });
   }
 
   updateRouteStatus(routeId: number, status: string) {
-    this.routeService.updateRouteStatus(routeId, status).subscribe({
-      next: () => {
-        alert(`Route ${status} successfully`);
-        this.loadRoutes();
-      },
-      error: (error) => console.error('Error updating route status:', error)
-    });
+    if (confirm(`Are you sure you want to ${status.toLowerCase()} this route?`)) {
+      this.routeService.updateRouteStatus(routeId, status).subscribe({
+        next: () => {
+          alert(`Route ${status} successfully`);
+          this.loadRoutes();
+        },
+        error: (error) => {
+          console.error('Error updating route status:', error);
+          alert('Failed to update route status');
+        }
+      });
+    }
   }
 
   deleteRoute(routeId: number) {
@@ -200,7 +254,10 @@ export class ManagerDashboardComponent implements OnInit {
           alert('Route deleted successfully');
           this.loadRoutes();
         },
-        error: (error) => console.error('Error deleting route:', error)
+        error: (error) => {
+          console.error('Error deleting route:', error);
+          alert('Failed to delete route');
+        }
       });
     }
   }
@@ -223,18 +280,26 @@ export class ManagerDashboardComponent implements OnInit {
   }
 
   createRoutine() {
-    if (this.routineForm.invalid) return;
-    
+    if (this.routineForm.invalid) {
+      alert('Please fill all required fields');
+      return;
+    }
+
     this.routineService.createRoutine(this.routineForm.value).subscribe({
       next: () => {
         alert('Routine created successfully');
         this.routineForm.reset();
       },
-      error: (error) => console.error('Error creating routine:', error)
+      error: (error) => {
+        console.error('Error creating routine:', error);
+        alert('Failed to create routine');
+      }
     });
   }
 
   logout() {
-    this.authService.logout().subscribe();
+    if (confirm('Are you sure you want to logout?')) {
+      this.authService.logout().subscribe();
+    }
   }
 }
