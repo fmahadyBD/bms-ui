@@ -1,7 +1,6 @@
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, throwError } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -9,104 +8,70 @@ import { catchError, tap } from 'rxjs/operators';
 export class StudentService {
   private baseUrl = 'http://localhost:8080/api/v1/students';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getAllStudents(): Observable<any> {
-    console.log('Fetching all students from:', this.baseUrl);
-    return this.http.get(`${this.baseUrl}`).pipe(
-      tap(data => console.log('Students received:', data)),
-      catchError(this.handleError)
-    );
+    return this.http.get(`${this.baseUrl}`);
   }
 
   getStudentById(studentId: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/${studentId}`).pipe(
-      catchError(this.handleError)
-    );
+    return this.http.get(`${this.baseUrl}/${studentId}`);
   }
 
   searchByEmail(email: string): Observable<any> {
     return this.http.get(`${this.baseUrl}/search/email`, {
       params: new HttpParams().set('email', email)
-    }).pipe(catchError(this.handleError));
+    });
   }
 
   searchByPhone(phone: string): Observable<any> {
     return this.http.get(`${this.baseUrl}/search/phone`, {
       params: new HttpParams().set('phone', phone)
-    }).pipe(catchError(this.handleError));
+    });
   }
 
   getStudentsByDeptAndBatch(department: string, batch: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/department/${department}/batch/${batch}`).pipe(
-      catchError(this.handleError)
-    );
+    return this.http.get(`${this.baseUrl}/department/${department}/batch/${batch}`);
   }
 
   getStudentsByRoute(routeId: number): Observable<any> {
-    return this.http.get(`${this.baseUrl}/route/${routeId}`).pipe(
-      catchError(this.handleError)
-    );
+    return this.http.get(`${this.baseUrl}/route/${routeId}`);
   }
 
   updateStudent(studentId: string, studentData: any): Observable<any> {
-    return this.http.patch(`${this.baseUrl}/${studentId}`, studentData).pipe(
-      catchError(this.handleError)
-    );
+    return this.http.patch(`${this.baseUrl}/${studentId}`, studentData);
   }
 
   assignRoute(studentId: string, routeId: number): Observable<any> {
-    return this.http.patch(`${this.baseUrl}/${studentId}/assign-route/${routeId}`, {}).pipe(
-      catchError(this.handleError)
-    );
+    return this.http.patch(`${this.baseUrl}/${studentId}/assign-route/${routeId}`, {});
   }
 
   removeRoute(studentId: string): Observable<any> {
-    return this.http.patch(`${this.baseUrl}/${studentId}/remove-route`, {}).pipe(
-      catchError(this.handleError)
-    );
+    return this.http.patch(`${this.baseUrl}/${studentId}/remove-route`, {});
   }
 
   getStudentRoutines(studentId: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/${studentId}/routines`).pipe(
-      catchError(this.handleError)
-    );
+    return this.http.get(`${this.baseUrl}/${studentId}/routines`);
   }
 
   blockStudent(studentId: string): Observable<any> {
-    return this.http.patch(`${this.baseUrl}/${studentId}/block`, {}).pipe(
-      catchError(this.handleError)
-    );
+    return this.http.patch(`${this.baseUrl}/${studentId}/block`, {});
   }
 
   unblockStudent(studentId: string): Observable<any> {
-    return this.http.patch(`${this.baseUrl}/${studentId}/unblock`, {}).pipe(
-      catchError(this.handleError)
-    );
+    return this.http.patch(`${this.baseUrl}/${studentId}/unblock`, {});
   }
 
+  // Fixed: responseType 'text' because backend returns plain string, not JSON
   changePassword(studentId: string, passwords: any): Observable<any> {
-    return this.http.patch(`${this.baseUrl}/${studentId}/change-password`, passwords).pipe(
-      catchError(this.handleError)
+    return this.http.patch(
+      `${this.baseUrl}/${studentId}/change-password`,
+      passwords,
+      { responseType: 'text' }
     );
   }
 
   deleteStudent(studentId: string): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/${studentId}`).pipe(
-      catchError(this.handleError)
-    );
-  }
-
-  private handleError(error: HttpErrorResponse) {
-    console.error('API Error:', error);
-    let errorMessage = 'An error occurred';
-    
-    if (error.error instanceof ErrorEvent) {
-      errorMessage = `Client Error: ${error.error.message}`;
-    } else {
-      errorMessage = `Server Error: ${error.status} - ${error.message}`;
-    }
-    
-    return throwError(() => new Error(errorMessage));
+    return this.http.delete(`${this.baseUrl}/${studentId}`);
   }
 }

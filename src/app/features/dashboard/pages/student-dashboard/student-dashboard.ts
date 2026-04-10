@@ -6,9 +6,9 @@ import { ChangePasswordComponent } from '../../components/change-password/change
 
 @Component({
   selector: 'app-student-dashboard',
-  standalone: true,  // Make it standalone
-  imports: [CommonModule, ChangePasswordComponent],  // Add imports
-  templateUrl: './student-dashboard.html',  // Fix template URL
+  standalone: true,
+  imports: [CommonModule, ChangePasswordComponent],
+  templateUrl: './student-dashboard.html',
   styleUrls: ['./student-dashboard.css']
 })
 export class StudentDashboardComponent implements OnInit {
@@ -16,6 +16,7 @@ export class StudentDashboardComponent implements OnInit {
   routines: any[] = [];
   loading = false;
   activeTab = 'profile';
+  private studentId: string = '';
 
   constructor(
     private studentService: StudentService,
@@ -24,38 +25,64 @@ export class StudentDashboardComponent implements OnInit {
 
   ngOnInit() {
     this.loadStudentData();
-    this.loadRoutines();
   }
 
   loadStudentData() {
     this.loading = true;
-    const studentId = localStorage.getItem('studentId') || 'CSE-2021-001';
-    this.studentService.getStudentById(studentId).subscribe({
-      next: (data) => {
-        this.studentData = data;
+    const userEmail = localStorage.getItem('user_email');
+    
+    if (!userEmail) {
+      console.error('No user email found');
+      this.loading = false;
+      this.redirectToLogin();
+      return;
+    }
+    
+    // Get student by email first
+    this.studentService.searchByEmail(userEmail).subscribe({
+      next: (student) => {
+        this.studentData = student;
+        this.studentId = student.studentId;
         this.loading = false;
+        // After getting student data, load routines
+        this.loadRoutines();
       },
       error: (error) => {
         console.error('Error loading student data:', error);
         this.loading = false;
+        if (error.status === 401 || error.status === 403) {
+          this.redirectToLogin();
+        } else {
+          alert('Failed to load student data. Please try again.');
+        }
       }
     });
   }
 
   loadRoutines() {
-    const studentId = localStorage.getItem('studentId') || 'CSE-2021-001';
-    this.studentService.getStudentRoutines(studentId).subscribe({
+    if (!this.studentId) return;
+    
+    this.studentService.getStudentRoutines(this.studentId).subscribe({
       next: (data) => {
-        this.routines = data;
+        this.routines = data || [];
       },
       error: (error) => {
         console.error('Error loading routines:', error);
+        this.routines = [];
       }
     });
   }
 
   changeTab(tab: string) {
     this.activeTab = tab;
+  }
+
+  refreshData() {
+    this.loadStudentData();
+  }
+
+  redirectToLogin() {
+    this.authService.logout().subscribe();
   }
 
   logout() {

@@ -1,5 +1,4 @@
-import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
@@ -12,11 +11,7 @@ export class AuthService {
   private tokenKey = 'jwt_token';
   private userTypeKey = 'user_type';
 
-  constructor(
-    private http: HttpClient, 
-    private router: Router,
-    @Inject(PLATFORM_ID) private platformId: Object
-  ) {}
+  constructor(private http: HttpClient, private router: Router) { }
 
   registerStudent(userData: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/auth/register/student`, userData, {
@@ -34,9 +29,11 @@ export class AuthService {
     return this.http.post(`${this.baseUrl}/auth/authenticate`, credentials)
       .pipe(
         tap((response: any) => {
-          if (response.token && isPlatformBrowser(this.platformId)) {
+          if (response.token) {
             this.setToken(response.token);
             this.setUserType(response.userType);
+            // Store email for student dashboard to use
+            localStorage.setItem('user_email', credentials.email);
           }
         })
       );
@@ -48,44 +45,29 @@ export class AuthService {
       headers: { Authorization: `Bearer ${token}` }
     }).pipe(
       tap(() => {
-        if (isPlatformBrowser(this.platformId)) {
-          this.clearStorage();
-        }
+        this.clearStorage();
         this.router.navigate(['/']);
       })
     );
   }
 
   getToken(): string | null {
-    if (!isPlatformBrowser(this.platformId)) {
-      return null;
-    }
     return localStorage.getItem(this.tokenKey);
   }
 
   private setToken(token: string): void {
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem(this.tokenKey, token);
-    }
+    localStorage.setItem(this.tokenKey, token);
   }
 
   private setUserType(userType: string): void {
-    if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem(this.userTypeKey, userType);
-    }
+    localStorage.setItem(this.userTypeKey, userType);
   }
 
   getUserType(): string | null {
-    if (!isPlatformBrowser(this.platformId)) {
-      return null;
-    }
     return localStorage.getItem(this.userTypeKey);
   }
 
   isLoggedIn(): boolean {
-    if (!isPlatformBrowser(this.platformId)) {
-      return false;
-    }
     return !!this.getToken();
   }
 
@@ -94,4 +76,28 @@ export class AuthService {
     localStorage.removeItem(this.userTypeKey);
     localStorage.removeItem('user_email');
   }
+
+
+
+  // In auth.ts (AuthService)
+
+  getDecodedToken(): any {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      // JWT payload is the second part, base64 encoded
+      const payload = token.split('.')[1];
+      const decoded = JSON.parse(atob(payload));
+      return decoded;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  getStudentIdFromToken(): string | null {
+    const decoded = this.getDecodedToken();
+    return decoded?.studentId ?? null;
+  }
+
 }
