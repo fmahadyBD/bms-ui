@@ -23,3 +23,250 @@ Step -4:
 Step 5:
 - Manager Dashboard
 - Student Dashboard
+
+
+========================================================================================================
+==============
+========================================================================================================
+
+
+
+src/
+├── app/
+│   ├── core/
+│   │   ├── guards/
+│   │   │   ├── auth.guard.ts
+│   │   │   ├── role.guard.ts
+│   │   │   ├── student.guard.ts
+│   │   │   └── manager.guard.ts
+│   │   ├── interceptors/
+│   │   │   ├── auth.interceptor.ts
+│   │   │   └── error.interceptor.ts
+│   │   ├── services/
+│   │   │   ├── auth.service.ts
+│   │   │   ├── user.service.ts
+│   │   │   └── api.service.ts
+│   │   ├── models/
+│   │   │   ├── user.model.ts
+│   │   │   ├── role.model.ts
+│   │   │   └── api-response.model.ts
+│   │   └── core.module.ts
+│   │
+│   ├── shared/
+│   │   ├── components/
+│   │   │   ├── sidebar/
+│   │   │   ├── header/
+│   │   │   ├── footer/
+│   │   │   ├── loading-spinner/
+│   │   │   ├── confirmation-dialog/
+│   │   │   └── not-found/
+│   │   ├── directives/
+│   │   │   ├── has-role.directive.ts
+│   │   │   └── highlight.directive.ts
+│   │   ├── pipes/
+│   │   │   ├── date-format.pipe.ts
+│   │   │   └── status.pipe.ts
+│   │   └── shared.module.ts
+│   │
+│   ├── features/
+│   │   ├── auth/
+│   │   │   ├── login/
+│   │   │   │   ├── login.component.ts
+│   │   │   │   ├── login.component.html
+│   │   │   │   ├── login.component.css
+│   │   │   │   └── login.component.spec.ts
+│   │   │   ├── register/
+│   │   │   ├── forgot-password/
+│   │   │   ├── auth-routing.module.ts
+│   │   │   └── auth.module.ts
+│   │   │
+│   │   ├── dashboard/
+│   │   │   ├── student-dashboard/
+│   │   │   │   ├── student-dashboard.component.ts
+│   │   │   │   ├── student-dashboard.component.html
+│   │   │   │   └── student-dashboard.component.css
+│   │   │   ├── manager-dashboard/
+│   │   │   │   ├── manager-dashboard.component.ts
+│   │   │   │   ├── manager-dashboard.component.html
+│   │   │   │   └── manager-dashboard.component.css
+│   │   │   ├── dashboard-routing.module.ts
+│   │   │   └── dashboard.module.ts
+│   │   │
+│   │   ├── bus/
+│   │   │   ├── components/
+│   │   │   │   ├── bus-list/
+│   │   │   │   │   ├── bus-list.component.ts
+│   │   │   │   │   ├── bus-list.component.html
+│   │   │   │   │   └── bus-list.component.css
+│   │   │   │   ├── bus-details/
+│   │   │   │   ├── bus-form/
+│   │   │   │   ├── bus-card/
+│   │   │   │   ├── bus-status/
+│   │   │   │   └── bus-tracking/
+│   │   │   ├── pages/
+│   │   │   │   ├── manage-buses/
+│   │   │   │   │   ├── manage-buses.component.ts
+│   │   │   │   │   ├── manage-buses.component.html
+│   │   │   │   │   └── manage-buses.component.css
+│   │   │   │   ├── bus-schedule/
+│   │   │   │   └── bus-maintenance/
+│   │   │   ├── services/
+│   │   │   │   ├── bus.service.ts
+│   │   │   │   ├── bus-schedule.service.ts
+│   │   │   │   └── bus-maintenance.service.ts
+│   │   │   ├── models/
+│   │   │   │   ├── bus.model.ts
+│   │   │   │   ├── bus-schedule.model.ts
+│   │   │   │   └── bus-maintenance.model.ts
+│   │   │   ├── bus-routing.module.ts
+│   │   │   └── bus.module.ts
+│   │   │
+│   │   ├── slot/
+│   │   │   ├── components/
+│   │   │   │   ├── slot-list/
+│   │   │   │   │   ├── slot-list.component.ts
+│   │   │   │   │   ├── slot-list.component.html
+│   │   │   │   │   └── slot-list.component.css
+│   │   │   │   ├── slot-booking/
+│   │   │   │   ├── slot-details/
+│   │   │   │   ├── slot-form/
+│   │   │   │   ├── slot-availability/
+│   │   │   │   └── slot-calendar/
+│   │   │   ├── pages/
+│   │   │   │   ├── available-slots/
+│   │   │   │   │   ├── available-slots.component.ts
+│   │   │   │   │   ├── available-slots.component.html
+│   │   │   │   │   └── available-slots.component.css
+│   │   │   │   ├── my-bookings/
+│   │   │   │   ├── manage-slots/
+│   │   │   │   └── slot-allocation/
+│   │   │   ├── services/
+│   │   │   │   ├── slot.service.ts
+│   │   │   │   ├── booking.service.ts
+│   │   │   │   └── allocation.service.ts
+│   │   │   ├── models/
+│   │   │   │   ├── slot.model.ts
+│   │   │   │   ├── booking.model.ts
+│   │   │   │   └── allocation.model.ts
+│   │   │   ├── slot-routing.module.ts
+│   │   │   └── slot.module.ts
+│   │   │
+│   │   ├── route/
+│   │   │   ├── components/
+│   │   │   │   ├── route-list/
+│   │   │   │   │   ├── route-list.component.ts
+│   │   │   │   │   ├── route-list.component.html
+│   │   │   │   │   └── route-list.component.css
+│   │   │   │   ├── route-map/
+│   │   │   │   ├── route-details/
+│   │   │   │   ├── route-form/
+│   │   │   │   ├── route-stops/
+│   │   │   │   └── route-schedule/
+│   │   │   ├── pages/
+│   │   │   │   ├── view-routes/
+│   │   │   │   │   ├── view-routes.component.ts
+│   │   │   │   │   ├── view-routes.component.html
+│   │   │   │   │   └── view-routes.component.css
+│   │   │   │   ├── manage-routes/
+│   │   │   │   ├── route-optimization/
+│   │   │   │   └── route-tracking/
+│   │   │   ├── services/
+│   │   │   │   ├── route.service.ts
+│   │   │   │   ├── route-stop.service.ts
+│   │   │   │   └── route-tracking.service.ts
+│   │   │   ├── models/
+│   │   │   │   ├── route.model.ts
+│   │   │   │   ├── route-stop.model.ts
+│   │   │   │   └── route-tracking.model.ts
+│   │   │   ├── route-routing.module.ts
+│   │   │   └── route.module.ts
+│   │   │
+│   │   ├── survey/
+│   │   │   ├── components/
+│   │   │   │   ├── survey-list/
+│   │   │   │   │   ├── survey-list.component.ts
+│   │   │   │   │   ├── survey-list.component.html
+│   │   │   │   │   └── survey-list.component.css
+│   │   │   │   ├── survey-form/
+│   │   │   │   ├── survey-details/
+│   │   │   │   ├── survey-response/
+│   │   │   │   ├── survey-charts/
+│   │   │   │   └── survey-feedback/
+│   │   │   ├── pages/
+│   │   │   │   ├── active-surveys/
+│   │   │   │   │   ├── active-surveys.component.ts
+│   │   │   │   │   ├── active-surveys.component.html
+│   │   │   │   │   └── active-surveys.component.css
+│   │   │   │   ├── create-survey/
+│   │   │   │   ├── survey-results/
+│   │   │   │   └── survey-analytics/
+│   │   │   ├── services/
+│   │   │   │   ├── survey.service.ts
+│   │   │   │   ├── response.service.ts
+│   │   │   │   └── analytics.service.ts
+│   │   │   ├── models/
+│   │   │   │   ├── survey.model.ts
+│   │   │   │   ├── question.model.ts
+│   │   │   │   └── response.model.ts
+│   │   │   ├── survey-routing.module.ts
+│   │   │   └── survey.module.ts
+│   │   │
+│   │   └── newbusrequest/
+│   │       ├── components/
+│   │       │   ├── request-list/
+│   │       │   │   ├── request-list.component.ts
+│   │       │   │   ├── request-list.component.html
+│   │       │   │   └── request-list.component.css
+│   │       │   ├── request-form/
+│   │       │   ├── request-details/
+│   │       │   ├── request-status/
+│   │       │   ├── request-approval/
+│   │       │   └── request-history/
+│   │       ├── pages/
+│   │       │   ├── new-request/
+│   │       │   │   ├── new-request.component.ts
+│   │       │   │   ├── new-request.component.html
+│   │       │   │   └── new-request.component.css
+│   │       │   ├── pending-requests/
+│   │       │   ├── approved-requests/
+│   │       │   ├── rejected-requests/
+│   │       │   └── request-tracking/
+│   │       ├── services/
+│   │       │   ├── request.service.ts
+│   │       │   ├── approval.service.ts
+│   │       │   └── notification.service.ts
+│   │       ├── models/
+│   │       │   ├── request.model.ts
+│   │       │   ├── approval.model.ts
+│   │       │   └── notification.model.ts
+│   │       ├── newbusrequest-routing.module.ts
+│   │       └── newbusrequest.module.ts
+│   │
+│   ├── layouts/
+│   │   ├── student-layout/
+│   │   │   ├── student-layout.component.ts
+│   │   │   ├── student-layout.component.html
+│   │   │   └── student-layout.component.css
+│   │   └── manager-layout/
+│   │       ├── manager-layout.component.ts
+│   │       ├── manager-layout.component.html
+│   │       └── manager-layout.component.css
+│   │
+│   ├── app.component.ts
+│   ├── app.component.html
+│   ├── app.component.css
+│   ├── app.config.ts
+│   └── app.routes.ts
+│
+├── assets/
+│   ├── images/
+│   ├── icons/
+│   └── styles/
+│
+├── environments/
+│   ├── environment.ts
+│   └── environment.prod.ts
+│
+├── styles.css
+├── main.ts
+└── index.html

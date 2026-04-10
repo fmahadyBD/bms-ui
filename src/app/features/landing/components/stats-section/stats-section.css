@@ -1,0 +1,30 @@
+.stats-section {
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-item {
+  padding: 20px;
+}
+
+.stat-item i {
+  opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+  .stat-item {
+    padding: 10px;
+  }
+  
+  .stat-item i {
+    font-size: 2rem;
+  }
+  
+  .stat-item h3 {
+    font-size: 1.5rem;
+  }
+  
+  .stat-item p {
+    font-size: 0.9rem;
+  }
+}

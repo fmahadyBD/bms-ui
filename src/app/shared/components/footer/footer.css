@@ -1,0 +1,42 @@
+footer {
+  margin-top: auto;
+}
+
+.social-links a {
+  transition: opacity 0.3s ease;
+  display: inline-block;
+}
+
+.social-links a:hover {
+  opacity: 0.8;
+  transform: translateY(-3px);
+}
+
+.list-unstyled li a {
+  transition: color 0.3s ease;
+}
+
+.list-unstyled li a:hover {
+  color: white !important;
+}
+
+.input-group .btn-primary {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.input-group .btn-primary:hover {
+  background-color: #0b5ed7;
+  border-color: #0a58ca;
+}
+
+@media (max-width: 768px) {
+  footer {
+    text-align: center;
+  }
+  
+  .social-links {
+    justify-content: center;
+    display: flex;
+  }
+}
