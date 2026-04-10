@@ -15,21 +15,21 @@ import { AuthService } from '../../../auth/services/auth';
 })
 export class ManagerDashboardComponent implements OnInit {
   activeTab = 'students';
-
+  
   // Student related
   students: any[] = [];
   selectedStudent: any = null;
   loading = false;
-
+  
   // Route related
   routes: any[] = [];
   routeForm: FormGroup;
   selectedRoute: any = null;
-
+  
   // Routine related
   routineForm: FormGroup;
   routines: any[] = [];
-
+  
   // Search
   searchEmail = '';
   searchPhone = '';
@@ -60,28 +60,20 @@ export class ManagerDashboardComponent implements OnInit {
 
   // ============ STUDENT MANAGEMENT ============
   loadStudents() {
-    console.log('Loading students...');
     this.loading = true;
-
-    // Check if token exists
-    const token = localStorage.getItem('jwt_token');
-    console.log('Token exists:', !!token);
-
     this.studentService.getAllStudents().subscribe({
       next: (data) => {
-        console.log('Students data received:', data);
-        console.log('Number of students:', data?.length);
         this.students = data;
         this.loading = false;
       },
       error: (error) => {
         console.error('Error loading students:', error);
-        console.error('Error details:', error.message);
         this.loading = false;
-        alert(`Failed to load students: ${error.message}`);
+        alert('Failed to load students');
       }
     });
   }
+
   viewStudent(student: any) {
     this.selectedStudent = student;
   }
@@ -159,15 +151,18 @@ export class ManagerDashboardComponent implements OnInit {
       alert('Please enter an email address');
       return;
     }
+    this.loading = true;
     this.studentService.searchByEmail(this.searchEmail).subscribe({
       next: (data) => {
         this.searchResult = data;
         alert(`Student found: ${data.name} (${data.studentId})`);
         this.searchEmail = '';
+        this.loading = false;
       },
       error: (error) => {
         console.error('Error searching student:', error);
         alert('Student not found');
+        this.loading = false;
       }
     });
   }
@@ -177,15 +172,18 @@ export class ManagerDashboardComponent implements OnInit {
       alert('Please enter a phone number');
       return;
     }
+    this.loading = true;
     this.studentService.searchByPhone(this.searchPhone).subscribe({
       next: (data) => {
         this.searchResult = data;
         alert(`Student found: ${data.name} (${data.studentId})`);
         this.searchPhone = '';
+        this.loading = false;
       },
       error: (error) => {
         console.error('Error searching student:', error);
         alert('Student not found');
+        this.loading = false;
       }
     });
   }
@@ -218,7 +216,7 @@ export class ManagerDashboardComponent implements OnInit {
       alert('Please fill all required fields');
       return;
     }
-
+    
     this.routeService.createRoute(this.routeForm.value).subscribe({
       next: () => {
         alert('Route created successfully');
@@ -284,7 +282,7 @@ export class ManagerDashboardComponent implements OnInit {
       alert('Please fill all required fields');
       return;
     }
-
+    
     this.routineService.createRoutine(this.routineForm.value).subscribe({
       next: () => {
         alert('Routine created successfully');

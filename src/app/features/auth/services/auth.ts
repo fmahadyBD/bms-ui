@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
@@ -11,7 +12,11 @@ export class AuthService {
   private tokenKey = 'jwt_token';
   private userTypeKey = 'user_type';
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private http: HttpClient, 
+    private router: Router,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {}
 
   registerStudent(userData: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/auth/register/student`, userData, {
@@ -29,10 +34,9 @@ export class AuthService {
     return this.http.post(`${this.baseUrl}/auth/authenticate`, credentials)
       .pipe(
         tap((response: any) => {
-          if (response.token) {
+          if (response.token && isPlatformBrowser(this.platformId)) {
             this.setToken(response.token);
             this.setUserType(response.userType);
-            this.setTokenExpiry(); // Store token expiry
           }
         })
       );
@@ -44,54 +48,50 @@ export class AuthService {
       headers: { Authorization: `Bearer ${token}` }
     }).pipe(
       tap(() => {
-        this.clearStorage();
+        if (isPlatformBrowser(this.platformId)) {
+          this.clearStorage();
+        }
         this.router.navigate(['/']);
       })
     );
   }
 
   getToken(): string | null {
-    // Check if token is expired before returning
-    if (this.isTokenExpired()) {
-      this.clearStorage();
-      this.router.navigate(['/']);
+    if (!isPlatformBrowser(this.platformId)) {
       return null;
     }
     return localStorage.getItem(this.tokenKey);
   }
 
-  private setTokenExpiry(): void {
-    // JWT tokens typically expire after 24 hours
-    const expiryTime = Date.now() + (24 * 60 * 60 * 1000);
-    localStorage.setItem('token_expiry', expiryTime.toString());
-  }
-
-  private isTokenExpired(): boolean {
-    const expiry = localStorage.getItem('token_expiry');
-    if (!expiry) return false;
-    return Date.now() > parseInt(expiry);
-  }
-
   private setToken(token: string): void {
-    localStorage.setItem(this.tokenKey, token);
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem(this.tokenKey, token);
+    }
   }
 
   private setUserType(userType: string): void {
-    localStorage.setItem(this.userTypeKey, userType);
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem(this.userTypeKey, userType);
+    }
   }
 
   getUserType(): string | null {
+    if (!isPlatformBrowser(this.platformId)) {
+      return null;
+    }
     return localStorage.getItem(this.userTypeKey);
   }
 
   isLoggedIn(): boolean {
+    if (!isPlatformBrowser(this.platformId)) {
+      return false;
+    }
     return !!this.getToken();
   }
 
   private clearStorage(): void {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userTypeKey);
-    localStorage.removeItem('token_expiry');
     localStorage.removeItem('user_email');
   }
 }
