@@ -1,16 +1,20 @@
 <div class="all-student-container">
+  <!-- Header -->
   <div class="card-header">
     <h2>
       <span class="header-icon">👨‍🎓</span>
       All Students
-      <span class="stats-badge">Total: {{ totalElements }}</span>
+      <span class="stats-badge">
+        <span>👥</span>
+        Total: {{ totalElements }}
+      </span>
     </h2>
   </div>
   
   <!-- Loading State -->
   <div *ngIf="loading" class="loading-spinner">
     <div class="spinner"></div>
-    <p style="margin-top: 1rem; color: var(--sea-green);">Loading students...</p>
+    <p>Loading students...</p>
   </div>
   
   <!-- Students Table -->
@@ -25,29 +29,58 @@
           <th>Department</th>
           <th>Batch</th>
           <th>Status</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let student of students">
-          <td><strong>{{ student.studentId }}</strong></td>
-          <td>{{ student.name }}</td>
-          <td>{{ student.email }}</td>
-          <td>{{ student.phoneNumber || 'N/A' }}</td>
-          <td>{{ student.department || 'N/A' }}</td>
-          <td>{{ student.batch || 'N/A' }}</td>
+          <td class="student-id">{{ student.studentId }}</td>
+          <td class="student-name">{{ student.name }}</td>
+          <td class="student-email">{{ student.email }}</td>
+          <td class="student-phone">{{ student.phoneNumber || 'N/A' }}</td>
+          <td class="student-dept">{{ student.department || 'N/A' }}</td>
+          <td class="student-batch">{{ student.batch || 'N/A' }}</td>
           <td>
             <span class="status-badge" [class.status-active]="!student.blocked" [class.status-blocked]="student.blocked">
+              <span>{{ student.blocked ? '🚫' : '✅' }}</span>
               {{ student.blocked ? 'Blocked' : 'Active' }}
             </span>
           </td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn-icon btn-view" (click)="viewDetails(student)" title="View Details">
+                👁️
+              </button>
+              <button class="btn-icon btn-edit" (click)="editStudent(student)" title="Edit Student">
+                ✏️
+              </button>
+              <button class="btn-icon btn-delete" (click)="confirmDelete(student)" title="Delete Student">
+                🗑️
+              </button>
+              <button 
+                *ngIf="!student.blocked" 
+                class="btn-icon btn-block" 
+                (click)="toggleBlockStatus(student)" 
+                title="Block Student">
+                🚫
+              </button>
+              <button 
+                *ngIf="student.blocked" 
+                class="btn-icon btn-unblock" 
+                (click)="toggleBlockStatus(student)" 
+                title="Unblock Student">
+                ✅
+              </button>
+            </div>
+          </td>
         </tr>
       </tbody>
-    </table>
+     </table>
     
     <!-- Pagination -->
     <div class="pagination">
       <button class="page-btn" [disabled]="currentPage === 0" (click)="previousPage()">
-        ← Previous
+        ◀ Previous
       </button>
       
       <div class="page-numbers">
@@ -61,7 +94,7 @@
       </div>
       
       <button class="page-btn" [disabled]="currentPage + 1 >= totalPages" (click)="nextPage()">
-        Next →
+        Next ▶
       </button>
     </div>
   </div>
@@ -71,5 +104,206 @@
     <div class="empty-icon">📭</div>
     <h3>No Students Found</h3>
     <p>There are no students registered in the system yet.</p>
+  </div>
+</div>
+
+<!-- ========== DETAILS MODAL ========== -->
+<div class="modal-overlay" *ngIf="showDetailsModal" (click)="closeDetailsModal()">
+  <div class="modal-container modal-details" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>
+        <span class="modal-icon">👨‍🎓</span>
+        Student Details
+      </h3>
+      <button class="modal-close" (click)="closeDetailsModal()">✕</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedStudent">
+      <div class="details-card">
+        <div class="details-avatar">
+          <span class="avatar-icon">👨‍🎓</span>
+        </div>
+        
+        <div class="details-grid">
+          <div class="detail-row">
+            <div class="detail-label">🆔 Student ID:</div>
+            <div class="detail-value">{{ selectedStudent.studentId }}</div>
+          </div>
+          
+          <div class="detail-row">
+            <div class="detail-label">👤 Full Name:</div>
+            <div class="detail-value">{{ selectedStudent.name }}</div>
+          </div>
+          
+          <div class="detail-row">
+            <div class="detail-label">📧 Email Address:</div>
+            <div class="detail-value">{{ selectedStudent.email }}</div>
+          </div>
+          
+          <div class="detail-row">
+            <div class="detail-label">📞 Phone Number:</div>
+            <div class="detail-value">{{ selectedStudent.phoneNumber || 'N/A' }}</div>
+          </div>
+          
+          <div class="detail-row">
+            <div class="detail-label">🏛️ Department:</div>
+            <div class="detail-value">{{ selectedStudent.department || 'N/A' }}</div>
+          </div>
+          
+          <div class="detail-row">
+            <div class="detail-label">📅 Batch:</div>
+            <div class="detail-value">{{ selectedStudent.batch || 'N/A' }}</div>
+          </div>
+          
+          <div class="detail-row">
+            <div class="detail-label">📊 Account Status:</div>
+            <div class="detail-value">
+              <span class="status-badge" [class.status-active]="!selectedStudent.blocked" [class.status-blocked]="selectedStudent.blocked">
+                {{ selectedStudent.blocked ? '🚫 Blocked' : '✅ Active' }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="detail-row" *ngIf="selectedStudent.routeName">
+            <div class="detail-label">🚌 Assigned Route:</div>
+            <div class="detail-value">{{ selectedStudent.routeName }}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer-actions">
+        <button class="btn-password" (click)="closeDetailsModal(); openChangePassword(selectedStudent)">
+          🔑 Change Password
+        </button>
+        <button class="btn-edit-full" (click)="closeDetailsModal(); editStudent(selectedStudent)">
+          ✏️ Edit Student
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== EDIT MODAL ========== -->
+<div class="modal-overlay" *ngIf="showEditModal" (click)="closeEditModal()">
+  <div class="modal-container modal-edit" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>
+        <span class="modal-icon">✏️</span>
+        Edit Student Information
+      </h3>
+      <button class="modal-close" (click)="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <form (ngSubmit)="saveEdit()" class="edit-form">
+        <div class="form-group">
+          <label>👤 Full Name</label>
+          <input type="text" [(ngModel)]="editForm.name" name="name" class="form-control" required placeholder="Enter full name">
+        </div>
+        
+        <div class="form-group">
+          <label>📧 Email Address</label>
+          <input type="email" [(ngModel)]="editForm.email" name="email" class="form-control" required placeholder="Enter email address">
+        </div>
+        
+        <div class="form-group">
+          <label>📞 Phone Number</label>
+          <input type="tel" [(ngModel)]="editForm.phoneNumber" name="phoneNumber" class="form-control" placeholder="Enter phone number">
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group half">
+            <label>🏛️ Department</label>
+            <input type="text" [(ngModel)]="editForm.department" name="department" class="form-control" placeholder="e.g., CSE">
+          </div>
+          
+          <div class="form-group half">
+            <label>📅 Batch</label>
+            <input type="text" [(ngModel)]="editForm.batch" name="batch" class="form-control" placeholder="e.g., 2024">
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="closeEditModal()">
+            Cancel
+          </button>
+          <button type="submit" class="btn-save" [disabled]="actionLoading">
+            💾 {{ actionLoading ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ========== CHANGE PASSWORD MODAL ========== -->
+<div class="modal-overlay" *ngIf="showChangePasswordModal" (click)="closeChangePasswordModal()">
+  <div class="modal-container modal-password" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>
+        <span class="modal-icon">🔑</span>
+        Change Password
+      </h3>
+      <button class="modal-close" (click)="closeChangePasswordModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="password-info" *ngIf="selectedStudent">
+        <p>Changing password for: <strong>{{ selectedStudent.name }}</strong></p>
+      </div>
+      
+      <form (ngSubmit)="saveChangePassword()" class="password-form">
+        <div class="form-group">
+          <label>🔒 Current Password</label>
+          <input type="password" [(ngModel)]="passwordForm.oldPassword" name="oldPassword" class="form-control" required placeholder="Enter current password">
+        </div>
+        
+        <div class="form-group">
+          <label>🔑 New Password</label>
+          <input type="password" [(ngModel)]="passwordForm.newPassword" name="newPassword" class="form-control" required placeholder="Enter new password">
+          <small class="form-hint">Minimum 8 characters required</small>
+        </div>
+        
+        <div class="form-group">
+          <label>✅ Confirm New Password</label>
+          <input type="password" [(ngModel)]="passwordForm.confirmPassword" name="confirmPassword" class="form-control" required placeholder="Confirm new password">
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="closeChangePasswordModal()">
+            Cancel
+          </button>
+          <button type="submit" class="btn-save" [disabled]="passwordLoading">
+            🔒 {{ passwordLoading ? 'Changing...' : 'Change Password' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ========== DELETE CONFIRMATION MODAL ========== -->
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
+  <div class="modal-container modal-delete" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>
+        <span class="modal-icon">⚠️</span>
+        Confirm Deletion
+      </h3>
+      <button class="modal-close" (click)="closeDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="delete-warning">
+        <div class="warning-icon">⚠️</div>
+        <p>Are you sure you want to delete <strong>{{ selectedStudent?.name }}</strong>?</p>
+        <p class="warning-text">This action cannot be undone! All data associated with this student will be permanently removed.</p>
+      </div>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" (click)="closeDeleteModal()">
+          Cancel
+        </button>
+        <button type="button" class="btn-delete-confirm" (click)="deleteStudent()" [disabled]="actionLoading">
+          🗑️ {{ actionLoading ? 'Deleting...' : 'Delete Permanently' }}
+        </button>
+      </div>
+    </div>
   </div>
 </div>

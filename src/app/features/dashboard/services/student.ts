@@ -2,6 +2,53 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
+export interface StudentSummaryResponse {
+  studentId: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  department: string;
+  batch: string;
+  blocked: boolean;
+  routeId?: number;
+  routeName?: string;
+}
+
+export interface StudentResponse {
+  studentId: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  department: string;
+  batch: string;
+  blocked: boolean;
+  routeId?: number;
+  routeName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateStudentRequest {
+  name?: string;
+  email?: string;
+  phoneNumber?: string;
+  department?: string;
+  batch?: string;
+}
+
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
+}
+
+export interface StudentRoutineResponse {
+  id: number;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  subject: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -10,73 +57,88 @@ export class StudentService {
 
   constructor(private http: HttpClient) { }
 
-
-  getAllStudents(page: number = 0, size: number = 20): Observable<any> {
+  // ✅ GET: Paginated students (for listing)
+  getAllStudents(page: number = 0, size: number = 20): Observable<{
+    content: StudentSummaryResponse[];
+    totalElements: number;
+    totalPages: number;
+    size: number;
+    number: number;
+  }> {
     const params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
-    // Your backend endpoint is just /api/v1/students with page/size params
-    return this.http.get(`${this.baseUrl}`, { params });
+    return this.http.get<any>(`${this.baseUrl}`, { params });
   }
 
-  // Heavy endpoint - avoid for listing
-  getAllStudentsUnpaginated(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/all`);
+  // ✅ GET: Student by ID
+  getStudentById(studentId: string): Observable<StudentResponse> {
+    return this.http.get<StudentResponse>(`${this.baseUrl}/${studentId}`);
   }
 
-  getStudentById(studentId: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/${studentId}`);
-  }
-
-  searchByEmail(email: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/search/email`, {
+  // ✅ GET: Search by email
+  searchByEmail(email: string): Observable<StudentResponse> {
+    return this.http.get<StudentResponse>(`${this.baseUrl}/search/email`, {
       params: new HttpParams().set('email', email)
     });
   }
 
-  searchByPhone(phone: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/search/phone`, {
+  // ✅ GET: Search by phone
+  searchByPhone(phone: string): Observable<StudentResponse> {
+    return this.http.get<StudentResponse>(`${this.baseUrl}/search/phone`, {
       params: new HttpParams().set('phone', phone)
     });
   }
 
-  getStudentsByDeptAndBatch(department: string, batch: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/department/${department}/batch/${batch}`);
+  // ✅ GET: Students by department and batch
+  getStudentsByDeptAndBatch(department: string, batch: string): Observable<StudentResponse[]> {
+    return this.http.get<StudentResponse[]>(`${this.baseUrl}/department/${department}/batch/${batch}`);
   }
 
-  getStudentsByRoute(routeId: number): Observable<any> {
-    return this.http.get(`${this.baseUrl}/route/${routeId}`);
+  // ✅ GET: Students by route
+  getStudentsByRoute(routeId: number): Observable<StudentResponse[]> {
+    return this.http.get<StudentResponse[]>(`${this.baseUrl}/route/${routeId}`);
   }
 
-  updateStudent(studentId: string, studentData: any): Observable<any> {
-    return this.http.patch(`${this.baseUrl}/${studentId}`, studentData);
+  // ✅ PATCH: Update student
+  updateStudent(studentId: string, studentData: UpdateStudentRequest): Observable<StudentResponse> {
+    return this.http.patch<StudentResponse>(`${this.baseUrl}/${studentId}`, studentData);
   }
 
-  assignRoute(studentId: string, routeId: number): Observable<any> {
-    return this.http.patch(`${this.baseUrl}/${studentId}/assign-route/${routeId}`, {});
+  // ✅ PATCH: Assign route to student
+  assignRoute(studentId: string, routeId: number): Observable<StudentResponse> {
+    return this.http.patch<StudentResponse>(`${this.baseUrl}/${studentId}/assign-route/${routeId}`, {});
   }
 
-  removeRoute(studentId: string): Observable<any> {
-    return this.http.patch(`${this.baseUrl}/${studentId}/remove-route`, {});
+  // ✅ PATCH: Remove route from student
+  removeRoute(studentId: string): Observable<StudentResponse> {
+    return this.http.patch<StudentResponse>(`${this.baseUrl}/${studentId}/remove-route`, {});
   }
 
-  getStudentRoutines(studentId: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/${studentId}/routines`);
+  // ✅ GET: Get student's routines
+  getStudentRoutines(studentId: string): Observable<StudentRoutineResponse[]> {
+    return this.http.get<StudentRoutineResponse[]>(`${this.baseUrl}/${studentId}/routines`);
   }
 
-  blockStudent(studentId: string): Observable<any> {
-    return this.http.patch(`${this.baseUrl}/${studentId}/block`, {});
+  // ✅ PATCH: Block student
+  blockStudent(studentId: string): Observable<StudentResponse> {
+    return this.http.patch<StudentResponse>(`${this.baseUrl}/${studentId}/block`, {});
   }
 
-  unblockStudent(studentId: string): Observable<any> {
-    return this.http.patch(`${this.baseUrl}/${studentId}/unblock`, {});
+  // ✅ PATCH: Unblock student
+  unblockStudent(studentId: string): Observable<StudentResponse> {
+    return this.http.patch<StudentResponse>(`${this.baseUrl}/${studentId}/unblock`, {});
   }
 
-  changePassword(studentId: string, passwords: any): Observable<any> {
-    return this.http.patch(`${this.baseUrl}/${studentId}/change-password`, passwords, { responseType: 'text' });
+  // ✅ PATCH: Change password
+  changePassword(studentId: string, passwords: ChangePasswordRequest): Observable<string> {
+    return this.http.patch(`${this.baseUrl}/${studentId}/change-password`, passwords, { 
+      responseType: 'text' 
+    });
   }
 
-  deleteStudent(studentId: string): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/${studentId}`);
+  // ✅ DELETE: Delete student
+  deleteStudent(studentId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${studentId}`);
   }
 }
