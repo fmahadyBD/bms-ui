@@ -1,0 +1,118 @@
+<nav class="navbar">
+  <div class="navbar-container">
+    <div class="logo" (click)="mobileMenuOpen = false; navigateToStudents()">
+      <span class="logo-icon">🚌</span>
+      <span class="logo-text">Bus<span>Manager</span></span>
+    </div>
+
+    <button class="mobile-menu-btn" (click)="toggleMobileMenu()" [class.active]="mobileMenuOpen">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <div class="nav-links" [class.mobile-open]="mobileMenuOpen">
+      <!-- Students Dropdown -->
+      <div class="dropdown">
+        <button class="dropdown-btn" (click)="toggleStudentsDropdown($event)">
+          <span>👨‍🎓</span> Students
+          <span class="dropdown-arrow">▼</span>
+        </button>
+        <div class="dropdown-menu" *ngIf="showStudentsDropdown">
+          <a (click)="navigateToStudents()">
+            <span class="menu-icon">📋</span> All Students
+          </a>
+          <a (click)="navigateToAddStudent()">
+            <span class="menu-icon">➕</span> Add Student
+          </a>
+        </div>
+      </div>
+
+      <!-- Routes Dropdown -->
+      <div class="dropdown">
+        <button class="dropdown-btn" (click)="toggleRoutesDropdown($event)">
+          <span>🗺️</span> Routes
+          <span class="dropdown-arrow">▼</span>
+        </button>
+        <div class="dropdown-menu" *ngIf="showRoutesDropdown">
+          <a (click)="navigateToRoutes()">
+            <span class="menu-icon">📋</span> All Routes
+          </a>
+          <a (click)="navigateToAddRoute()">
+            <span class="menu-icon">➕</span> Add Route
+          </a>
+        </div>
+      </div>
+
+      <!-- Components Dropdown -->
+      <div class="dropdown">
+        <button class="dropdown-btn" (click)="toggleComponentsDropdown($event)">
+          <span>⚙️</span> Components
+          <span class="dropdown-arrow">▼</span>
+        </button>
+        <div class="dropdown-menu" *ngIf="showComponentsDropdown">
+          <a (click)="openChangePassword()">
+            <span class="menu-icon">🔒</span> Change Password
+          </a>
+          <a>
+            <span class="menu-icon">📊</span> Reports
+          </a>
+          <a>
+            <span class="menu-icon">⚙️</span> Settings
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Section -->
+    <div class="profile-section">
+      <div class="profile-btn" (click)="toggleProfileDropdown($event)">
+        <div class="avatar">
+          {{ (userName | slice:0:2).toUpperCase() }}
+        </div>
+        <div class="profile-info">
+          <span class="profile-name">{{ userName }}</span>
+          <span class="profile-email">{{ userEmail }}</span>
+        </div>
+        <span class="chevron" [class.open]="showProfileDropdown">▼</span>
+      </div>
+
+      <div class="profile-dropdown" *ngIf="showProfileDropdown">
+        <div class="dropdown-header">
+          <div class="dropdown-avatar">
+            {{ (userName | slice:0:2).toUpperCase() }}
+          </div>
+          <h4>{{ userName }}</h4>
+          <p>{{ userEmail }}</p>
+        </div>
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-item" (click)="openChangePassword()">
+          <span class="dropdown-icon">🔒</span>
+          <span>Change Password</span>
+        </div>
+        <div class="dropdown-item">
+          <span class="dropdown-icon">👤</span>
+          <span>Profile Settings</span>
+        </div>
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-item logout-item" (click)="logout()">
+          <span class="dropdown-icon">🚪</span>
+          <span>Logout</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Change Password Modal -->
+<div class="modal-overlay" *ngIf="showChangePasswordModal" (click)="closeChangePasswordModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Change Password</h3>
+      <button class="modal-close" (click)="closeChangePasswordModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <app-change-password (passwordChanged)="closeChangePasswordModal()"></app-change-password>
+    </div>
+  </div>
+</div>

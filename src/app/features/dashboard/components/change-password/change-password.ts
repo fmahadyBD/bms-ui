@@ -1,9 +1,8 @@
-
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { StudentService } from '../../services/student';
-import { AuthService } from '../../../auth/services/auth'; // ADD THIS
+import { AuthService } from '../../../auth/services/auth';
 
 @Component({
   selector: 'app-change-password',
@@ -13,6 +12,8 @@ import { AuthService } from '../../../auth/services/auth'; // ADD THIS
   styleUrls: ['./change-password.css']
 })
 export class ChangePasswordComponent implements OnInit {
+  @Output() passwordChanged = new EventEmitter<void>();
+  
   passwordForm: FormGroup;
   successMessage = '';
   errorMessage = '';
@@ -22,7 +23,7 @@ export class ChangePasswordComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private studentService: StudentService,
-    private authService: AuthService  // ADD THIS
+    private authService: AuthService
   ) {
     this.passwordForm = this.fb.group({
       oldPassword: ['', Validators.required],
@@ -32,29 +33,11 @@ export class ChangePasswordComponent implements OnInit {
   }
 
   ngOnInit() {
-    // Read studentId directly from the JWT — no extra API call needed
     const id = this.authService.getStudentIdFromToken();
     if (id) {
       this.studentId = id;
-      console.log('Student ID from token:', this.studentId);
     } else {
       this.errorMessage = 'Could not identify student. Please login again.';
-    }
-  }
-
-  getStudentId() {
-    const userEmail = localStorage.getItem('user_email');
-    if (userEmail) {
-      this.studentService.searchByEmail(userEmail).subscribe({
-        next: (student) => {
-          this.studentId = student.studentId;
-          console.log('Student ID loaded:', this.studentId);
-        },
-        error: (error) => {
-          console.error('Error getting student:', error);
-          this.errorMessage = 'Could not identify student. Please refresh.';
-        }
-      });
     }
   }
 
@@ -64,9 +47,6 @@ export class ChangePasswordComponent implements OnInit {
   }
 
   onSubmit() {
-    console.log('Submitting password change...');
-    console.log('Student ID:', this.studentId);
-
     if (this.passwordForm.invalid) {
       if (this.passwordForm.hasError('mismatch')) {
         this.errorMessage = 'New passwords do not match';
@@ -92,25 +72,18 @@ export class ChangePasswordComponent implements OnInit {
       newPassword: this.passwordForm.value.newPassword
     };
 
-    console.log('Sending password change request:', { studentId: this.studentId, passwords });
-
     this.studentService.changePassword(this.studentId, passwords).subscribe({
       next: (response) => {
-        console.log('Password change response:', response);
         this.successMessage = 'Password changed successfully!';
         this.passwordForm.reset();
         this.loading = false;
-
+        
         setTimeout(() => {
           this.successMessage = '';
-        }, 3000);
+          this.passwordChanged.emit();
+        }, 1500);
       },
       error: (error) => {
-        console.error('Password change error details:', error);
-        console.error('Status:', error.status);
-        console.error('Error body:', error.error);  
-        console.error('Full error:', error);
-
         if (error.status === 400) {
           if (error.error?.includes('Old password')) {
             this.errorMessage = 'Current password is incorrect';

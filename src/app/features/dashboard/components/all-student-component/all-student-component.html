@@ -1,0 +1,75 @@
+<div class="all-student-container">
+  <div class="card-header">
+    <h2>
+      <span class="header-icon">👨‍🎓</span>
+      All Students
+      <span class="stats-badge">Total: {{ totalElements }}</span>
+    </h2>
+  </div>
+  
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+    <p style="margin-top: 1rem; color: var(--sea-green);">Loading students...</p>
+  </div>
+  
+  <!-- Students Table -->
+  <div *ngIf="!loading && students.length > 0" class="students-table-container">
+    <table class="students-table">
+      <thead>
+        <tr>
+          <th>Student ID</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Department</th>
+          <th>Batch</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let student of students">
+          <td><strong>{{ student.studentId }}</strong></td>
+          <td>{{ student.name }}</td>
+          <td>{{ student.email }}</td>
+          <td>{{ student.phoneNumber || 'N/A' }}</td>
+          <td>{{ student.department || 'N/A' }}</td>
+          <td>{{ student.batch || 'N/A' }}</td>
+          <td>
+            <span class="status-badge" [class.status-active]="!student.blocked" [class.status-blocked]="student.blocked">
+              {{ student.blocked ? 'Blocked' : 'Active' }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- Pagination -->
+    <div class="pagination">
+      <button class="page-btn" [disabled]="currentPage === 0" (click)="previousPage()">
+        ← Previous
+      </button>
+      
+      <div class="page-numbers">
+        <button 
+          *ngFor="let page of getPages()"
+          class="page-number"
+          [class.active]="page === currentPage"
+          (click)="goToPage(page)">
+          {{ page + 1 }}
+        </button>
+      </div>
+      
+      <button class="page-btn" [disabled]="currentPage + 1 >= totalPages" (click)="nextPage()">
+        Next →
+      </button>
+    </div>
+  </div>
+  
+  <!-- Empty State -->
+  <div *ngIf="!loading && students.length === 0" class="empty-state">
+    <div class="empty-icon">📭</div>
+    <h3>No Students Found</h3>
+    <p>There are no students registered in the system yet.</p>
+  </div>
+</div>

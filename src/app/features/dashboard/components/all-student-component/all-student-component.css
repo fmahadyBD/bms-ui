@@ -10,18 +10,7 @@
   --evergreen: #081c15ff;
 }
 
-.dashboard-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #f0f2f5 100%);
-}
-
-.main-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-.content-card {
+.all-student-container {
   background: white;
   border-radius: 20px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
@@ -200,10 +189,6 @@
 }
 
 @media (max-width: 768px) {
-  .main-content {
-    padding: 1rem;
-  }
-  
   .card-header {
     padding: 1rem;
   }
@@ -216,6 +201,10 @@
     font-size: 0.7rem;
   }
   
+  .students-table-container {
+    padding: 1rem;
+  }
+  
   .students-table th,
   .students-table td {
     padding: 0.5rem;
@@ -224,5 +213,10 @@
   
   .pagination {
     flex-wrap: wrap;
+  }
+  
+  .page-btn, .page-number {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.85rem;
   }
 }
