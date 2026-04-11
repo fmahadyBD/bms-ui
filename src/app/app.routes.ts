@@ -1,12 +1,12 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 import { roleGuard } from './guards/role.guard';
-import { loggedInGuard } from './guards/logged-in.guard'; // ← new guard
+import { loggedInGuard } from './guards/logged-in.guard';
 
 export const routes: Routes = [
   {
     path: '',
-    canActivate: [loggedInGuard], // ← redirects away if already logged in
+    canActivate: [loggedInGuard],
     loadComponent: () => import('./features/landing/pages/landing-page/landing-page').then(m => m.LandingPage)
   },
   {
@@ -18,7 +18,13 @@ export const routes: Routes = [
     path: 'manager-dashboard',
     loadComponent: () => import('./features/dashboard/pages/manager-dashboard/manager-dashboard').then(m => m.ManagerDashboardComponent),
     canActivate: [authGuard, roleGuard],
-    data: { role: 'MANAGER' }
+    data: { role: 'MANAGER' },
+    children: [
+      { path: '', redirectTo: 'students', pathMatch: 'full' },
+      { path: 'students', loadComponent: () => import('./features/dashboard/components/all-student-component/all-student-component').then(m => m.AllStudentComponent) },
+      { path: 'buses', loadComponent: () => import('./features/bus/bus-component/bus-component').then(m => m.BusComponent) },
+      { path: 'routes', loadComponent: () => import('./features/route/route-component/route-component').then(m => m.RouteComponent) }
+    ]
   },
   { path: '**', redirectTo: '' }
 ];

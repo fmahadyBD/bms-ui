@@ -2,29 +2,26 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../auth/services/auth';
-import { ChangePasswordComponent } from '../change-password/change-password'; // Add this import
+import { ChangePasswordComponent } from '../change-password/change-password';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterModule, ChangePasswordComponent], // Add ChangePasswordComponent here
+  imports: [CommonModule, RouterModule, ChangePasswordComponent],
   templateUrl: './navbar-component.html',
   styleUrls: ['./navbar-component.css']
 })
 export class NavbarComponent implements OnInit {
-  showStudentsDropdown = false;
-  showRoutesDropdown = false;
-  showComponentsDropdown = false;
   showProfileDropdown = false;
   mobileMenuOpen = false;
   showChangePasswordModal = false;
-  
+
   userEmail: string = '';
   userName: string = '';
 
   constructor(
     private authService: AuthService,
-    public router: Router
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -48,84 +45,59 @@ export class NavbarComponent implements OnInit {
     }
   }
 
-  toggleStudentsDropdown(event: Event) {
-    event.stopPropagation();
-    this.showStudentsDropdown = !this.showStudentsDropdown;
-    this.showRoutesDropdown = false;
-    this.showComponentsDropdown = false;
-    this.showProfileDropdown = false;
-  }
-
-  toggleRoutesDropdown(event: Event) {
-    event.stopPropagation();
-    this.showRoutesDropdown = !this.showRoutesDropdown;
-    this.showStudentsDropdown = false;
-    this.showComponentsDropdown = false;
-    this.showProfileDropdown = false;
-  }
-
-  toggleComponentsDropdown(event: Event) {
-    event.stopPropagation();
-    this.showComponentsDropdown = !this.showComponentsDropdown;
-    this.showStudentsDropdown = false;
-    this.showRoutesDropdown = false;
-    this.showProfileDropdown = false;
-  }
-
   toggleProfileDropdown(event: Event) {
     event.stopPropagation();
     this.showProfileDropdown = !this.showProfileDropdown;
-    this.showStudentsDropdown = false;
-    this.showRoutesDropdown = false;
-    this.showComponentsDropdown = false;
   }
 
   toggleMobileMenu() {
     this.mobileMenuOpen = !this.mobileMenuOpen;
-    if (!this.mobileMenuOpen) {
-      this.closeAllDropdowns();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event) {
+    const profileSection = document.querySelector('.profile-section');
+    if (profileSection && !profileSection.contains(event.target as Node)) {
+      this.showProfileDropdown = false;
     }
   }
 
-  closeAllDropdowns() {
-    this.showStudentsDropdown = false;
-    this.showRoutesDropdown = false;
-    this.showComponentsDropdown = false;
-    this.showProfileDropdown = false;
-  }
-
-  @HostListener('document:click')
-  onDocumentClick() {
-    this.closeAllDropdowns();
-  }
-
-  navigateToStudents() {
-    this.router.navigate(['/manager/students']);
-    this.closeAllDropdowns();
+  navigateToDashboard() {
+    this.router.navigate(['/manager-dashboard']);
     this.mobileMenuOpen = false;
   }
 
-  navigateToAddStudent() {
-    this.router.navigate(['/manager/students/add']);
-    this.closeAllDropdowns();
+  navigateToStudents() {
+    this.router.navigate(['/manager-dashboard/students']);
+    this.mobileMenuOpen = false;
+  }
+
+  navigateToBuses() {
+    this.router.navigate(['/manager-dashboard/buses']);
     this.mobileMenuOpen = false;
   }
 
   navigateToRoutes() {
-    this.router.navigate(['/manager/routes']);
-    this.closeAllDropdowns();
+    this.router.navigate(['/manager-dashboard/routes']);
     this.mobileMenuOpen = false;
   }
 
-  navigateToAddRoute() {
-    this.router.navigate(['/manager/routes/add']);
-    this.closeAllDropdowns();
+  navigateToReports() {
+    this.router.navigate(['/manager-dashboard/students']);
     this.mobileMenuOpen = false;
   }
 
-  openChangePassword() {
+  navigateToProfile(event?: Event) {
+    event?.stopPropagation();
+    this.showProfileDropdown = false;
+    this.router.navigate(['/manager-dashboard/students']);
+    this.mobileMenuOpen = false;
+  }
+
+  openChangePassword(event?: Event) {
+    event?.stopPropagation();
     this.showChangePasswordModal = true;
-    this.closeAllDropdowns();
+    this.showProfileDropdown = false;
     this.mobileMenuOpen = false;
   }
 
@@ -133,7 +105,8 @@ export class NavbarComponent implements OnInit {
     this.showChangePasswordModal = false;
   }
 
-  logout() {
+  logout(event?: Event) {
+    event?.stopPropagation();
     if (confirm('Are you sure you want to logout?')) {
       this.authService.logout().subscribe({
         next: () => {

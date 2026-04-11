@@ -1,0 +1,252 @@
+<div class="bus-container">
+  <div class="page-header">
+    <div class="header-title">
+      <span class="title-icon">🚌</span>
+      <h1>Bus Management</h1>
+    </div>
+    <button class="btn-add" (click)="openAddModal()">
+      <span>➕</span> Add New Bus
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+    <p>Loading buses...</p>
+  </div>
+
+  <!-- Buses Grid -->
+  <div *ngIf="!loading && buses.length > 0" class="buses-grid">
+    <div class="bus-card" *ngFor="let bus of buses">
+      <div class="bus-card-header">
+        <div class="bus-icon">🚌</div>
+        <div class="bus-info">
+          <h3>{{ bus.busName }}</h3>
+          <p class="bus-number">{{ bus.busNumber }}</p>
+        </div>
+        <div class="status-badge" [class]="getStatusClass(bus.status)">
+          {{ bus.status }}
+        </div>
+      </div>
+      
+      <div class="bus-card-body">
+        <div class="info-row">
+          <span class="info-label">👨‍✈️ Driver:</span>
+          <span class="info-value">{{ bus.driverName }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">📞 Driver Phone:</span>
+          <span class="info-value">{{ bus.driverPhone }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">👨‍🔧 Helper:</span>
+          <span class="info-value">{{ bus.helperName }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">📞 Helper Phone:</span>
+          <span class="info-value">{{ bus.helperPhone }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">🗺️ Route:</span>
+          <span class="info-value">{{ getRouteName(bus.routeId) }}</span>
+        </div>
+      </div>
+      
+      <div class="bus-card-footer">
+        <select class="status-select" [value]="bus.status" (change)="updateStatus(bus, $event)">
+          <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+        </select>
+        <div class="action-buttons">
+          <button class="btn-view" (click)="viewDetails(bus)" title="View Details">👁️</button>
+          <button class="btn-edit" (click)="editBus(bus)" title="Edit Bus">✏️</button>
+          <button class="btn-delete" (click)="confirmDelete(bus)" title="Delete Bus">🗑️</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && buses.length === 0" class="empty-state">
+    <div class="empty-icon">🚌</div>
+    <h3>No Buses Found</h3>
+    <p>Click "Add New Bus" to register your first bus.</p>
+  </div>
+</div>
+
+<!-- Add Bus Modal -->
+<div class="modal-overlay" *ngIf="showAddModal" (click)="closeAddModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>➕ Add New Bus</h3>
+      <button class="modal-close" (click)="closeAddModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <form (ngSubmit)="saveBus()">
+        <div class="form-row">
+          <div class="form-group">
+            <label>🚌 Bus Name *</label>
+            <input type="text" [(ngModel)]="busForm.busName" name="busName" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>🔢 Bus Number *</label>
+            <input type="text" [(ngModel)]="busForm.busNumber" name="busNumber" class="form-control" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>📊 Status</label>
+          <select [(ngModel)]="busForm.status" name="status" class="form-control">
+            <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+          </select>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>👨‍✈️ Driver Name *</label>
+            <input type="text" [(ngModel)]="busForm.driverName" name="driverName" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>📞 Driver Phone *</label>
+            <input type="tel" [(ngModel)]="busForm.driverPhone" name="driverPhone" class="form-control" required>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>👨‍🔧 Helper Name *</label>
+            <input type="text" [(ngModel)]="busForm.helperName" name="helperName" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>📞 Helper Phone *</label>
+            <input type="tel" [(ngModel)]="busForm.helperPhone" name="helperPhone" class="form-control" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>🗺️ Assign Route (Optional)</label>
+          <select [(ngModel)]="busForm.routeId" name="routeId" class="form-control">
+            <option [value]="undefined">None</option>
+            <option *ngFor="let route of routes" [value]="route.id">{{ route.routeName }} ({{ route.busNo }})</option>
+          </select>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="closeAddModal()">Cancel</button>
+          <button type="submit" class="btn-save" [disabled]="actionLoading">
+            💾 {{ actionLoading ? 'Saving...' : 'Save Bus' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Bus Modal -->
+<div class="modal-overlay" *ngIf="showEditModal" (click)="closeEditModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>✏️ Edit Bus</h3>
+      <button class="modal-close" (click)="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <form (ngSubmit)="updateBus()">
+        <div class="form-row">
+          <div class="form-group">
+            <label>🚌 Bus Name *</label>
+            <input type="text" [(ngModel)]="busForm.busName" name="busName" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>🔢 Bus Number *</label>
+            <input type="text" [(ngModel)]="busForm.busNumber" name="busNumber" class="form-control" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>📊 Status</label>
+          <select [(ngModel)]="busForm.status" name="status" class="form-control">
+            <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+          </select>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>👨‍✈️ Driver Name *</label>
+            <input type="text" [(ngModel)]="busForm.driverName" name="driverName" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>📞 Driver Phone *</label>
+            <input type="tel" [(ngModel)]="busForm.driverPhone" name="driverPhone" class="form-control" required>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>👨‍🔧 Helper Name *</label>
+            <input type="text" [(ngModel)]="busForm.helperName" name="helperName" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>📞 Helper Phone *</label>
+            <input type="tel" [(ngModel)]="busForm.helperPhone" name="helperPhone" class="form-control" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>🗺️ Assign Route</label>
+          <select [(ngModel)]="busForm.routeId" name="routeId" class="form-control">
+            <option [value]="undefined">None</option>
+            <option *ngFor="let route of routes" [value]="route.id">{{ route.routeName }} ({{ route.busNo }})</option>
+          </select>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="closeEditModal()">Cancel</button>
+          <button type="submit" class="btn-save" [disabled]="actionLoading">
+            💾 {{ actionLoading ? 'Updating...' : 'Update Bus' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal-overlay" *ngIf="showDetailsModal" (click)="closeDetailsModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>🚌 Bus Details</h3>
+      <button class="modal-close" (click)="closeDetailsModal()">✕</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedBus">
+      <div class="details-card">
+        <div class="detail-row"><label>Bus Name:</label><span>{{ selectedBus.busName }}</span></div>
+        <div class="detail-row"><label>Bus Number:</label><span>{{ selectedBus.busNumber }}</span></div>
+        <div class="detail-row"><label>Status:</label><span class="status-badge" [class]="getStatusClass(selectedBus.status)">{{ selectedBus.status }}</span></div>
+        <div class="detail-row"><label>Driver Name:</label><span>{{ selectedBus.driverName }}</span></div>
+        <div class="detail-row"><label>Driver Phone:</label><span>{{ selectedBus.driverPhone }}</span></div>
+        <div class="detail-row"><label>Helper Name:</label><span>{{ selectedBus.helperName }}</span></div>
+        <div class="detail-row"><label>Helper Phone:</label><span>{{ selectedBus.helperPhone }}</span></div>
+        <div class="detail-row"><label>Route:</label><span>{{ getRouteName(selectedBus.routeId) }}</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>⚠️ Confirm Delete</h3>
+      <button class="modal-close" (click)="closeDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to delete <strong>{{ selectedBus?.busName }}</strong>?</p>
+      <p class="warning-text">This action cannot be undone!</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="closeDeleteModal()">Cancel</button>
+        <button class="btn-delete-confirm" (click)="deleteBus()" [disabled]="actionLoading">
+          🗑️ {{ actionLoading ? 'Deleting...' : 'Delete Permanently' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

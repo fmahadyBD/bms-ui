@@ -1,67 +1,27 @@
 <nav class="navbar">
   <div class="navbar-container">
-    <div class="logo" (click)="mobileMenuOpen = false; navigateToStudents()">
-      <span class="logo-icon">🚌</span>
-      <span class="logo-text">Bus<span>Manager</span></span>
+    <!-- Logo -->
+    <div class="logo" (click)="navigateToDashboard()">
+      <div class="logo-icon">🚌</div>
+      <div class="logo-text">
+        <span class="logo-main">BusManager</span>
+      </div>
     </div>
 
+    <!-- Mobile Menu Button -->
     <button class="mobile-menu-btn" (click)="toggleMobileMenu()" [class.active]="mobileMenuOpen">
       <span></span>
       <span></span>
       <span></span>
     </button>
 
+    <!-- Navigation Links -->
     <div class="nav-links" [class.mobile-open]="mobileMenuOpen">
-      <!-- Students Dropdown -->
-      <div class="dropdown">
-        <button class="dropdown-btn" (click)="toggleStudentsDropdown($event)">
-          <span>👨‍🎓</span> Students
-          <span class="dropdown-arrow">▼</span>
-        </button>
-        <div class="dropdown-menu" *ngIf="showStudentsDropdown">
-          <a (click)="navigateToStudents()">
-            <span class="menu-icon">📋</span> All Students
-          </a>
-          <a (click)="navigateToAddStudent()">
-            <span class="menu-icon">➕</span> Add Student
-          </a>
-        </div>
-      </div>
-
-      <!-- Routes Dropdown -->
-      <div class="dropdown">
-        <button class="dropdown-btn" (click)="toggleRoutesDropdown($event)">
-          <span>🗺️</span> Routes
-          <span class="dropdown-arrow">▼</span>
-        </button>
-        <div class="dropdown-menu" *ngIf="showRoutesDropdown">
-          <a (click)="navigateToRoutes()">
-            <span class="menu-icon">📋</span> All Routes
-          </a>
-          <a (click)="navigateToAddRoute()">
-            <span class="menu-icon">➕</span> Add Route
-          </a>
-        </div>
-      </div>
-
-      <!-- Components Dropdown -->
-      <div class="dropdown">
-        <button class="dropdown-btn" (click)="toggleComponentsDropdown($event)">
-          <span>⚙️</span> Components
-          <span class="dropdown-arrow">▼</span>
-        </button>
-        <div class="dropdown-menu" *ngIf="showComponentsDropdown">
-          <a (click)="openChangePassword()">
-            <span class="menu-icon">🔒</span> Change Password
-          </a>
-          <a>
-            <span class="menu-icon">📊</span> Reports
-          </a>
-          <a>
-            <span class="menu-icon">⚙️</span> Settings
-          </a>
-        </div>
-      </div>
+      <a class="nav-link" (click)="navigateToDashboard()">Dashboard</a>
+      <a class="nav-link" (click)="navigateToStudents()">Students</a>
+      <a class="nav-link" (click)="navigateToBuses()">Buses</a>
+      <a class="nav-link" (click)="navigateToRoutes()">Routes</a>
+      <a class="nav-link" (click)="navigateToReports()">Reports</a>
     </div>
 
     <!-- Profile Section -->
@@ -86,19 +46,10 @@
           <p>{{ userEmail }}</p>
         </div>
         <div class="dropdown-divider"></div>
-        <div class="dropdown-item" (click)="openChangePassword()">
-          <span class="dropdown-icon">🔒</span>
-          <span>Change Password</span>
-        </div>
-        <div class="dropdown-item">
-          <span class="dropdown-icon">👤</span>
-          <span>Profile Settings</span>
-        </div>
+        <div class="dropdown-item" (click)="openChangePassword($event)">Change Password</div>
+        <div class="dropdown-item" (click)="navigateToProfile($event)">Profile Settings</div>
         <div class="dropdown-divider"></div>
-        <div class="dropdown-item logout-item" (click)="logout()">
-          <span class="dropdown-icon">🚪</span>
-          <span>Logout</span>
-        </div>
+        <div class="dropdown-item logout-item" (click)="logout($event)">Logout</div>
       </div>
     </div>
   </div>
