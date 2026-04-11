@@ -1,1 +1,279 @@
-<p>route-component works!</p>
+<div class="route-container">
+  <div class="page-header">
+    <div class="header-title">
+      <span class="title-icon">🗺️</span>
+      <h1>Route Management</h1>
+    </div>
+    <button class="btn-add" (click)="openAddModal()">
+      <span>➕</span> Add New Route
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+    <p>Loading routes...</p>
+  </div>
+
+  <!-- Routes Grid -->
+  <div *ngIf="!loading && routes.length > 0" class="routes-grid">
+    <div class="route-card" *ngFor="let route of routes">
+      <div class="route-card-header">
+        <div class="route-icon">🗺️</div>
+        <div class="route-info">
+          <h3>{{ route.routeName }}</h3>
+          <p class="route-line">{{ route.routeLine }}</p>
+        </div>
+        <div class="status-badge" [class]="getStatusClass(route.status)">
+          {{ route.status }}
+        </div>
+      </div>
+
+      <div class="route-card-body">
+        <div class="info-row">
+          <span class="info-label">🚌 Bus No:</span>
+          <span class="info-value">{{ route.busNo }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">📍 Pickup Points:</span>
+          <span class="info-value">{{ route.pickupPoints.length }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">📅 Operating Days:</span>
+          <span class="info-value days-row">
+            <span class="day-chip" *ngFor="let day of route.operatingDays">
+              {{ getDayShort(day) }}
+            </span>
+          </span>
+        </div>
+      </div>
+
+      <div class="route-card-footer">
+        <select class="status-select" [value]="route.status" (change)="updateStatus(route, $event)">
+          <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+        </select>
+        <div class="action-buttons">
+          <button class="btn-view" (click)="viewDetails(route)" title="View Details">👁️</button>
+          <button class="btn-edit" (click)="editRoute(route)" title="Edit Route">✏️</button>
+          <button class="btn-delete" (click)="confirmDelete(route)" title="Delete Route">🗑️</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && routes.length === 0" class="empty-state">
+    <div class="empty-icon">🗺️</div>
+    <h3>No Routes Found</h3>
+    <p>Click "Add New Route" to create your first route.</p>
+  </div>
+</div>
+
+<!-- ===== ADD MODAL ===== -->
+<div class="modal-overlay" *ngIf="showAddModal" (click)="closeAddModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>➕ Add New Route</h3>
+      <button class="modal-close" (click)="closeAddModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>🚌 Bus No *</label>
+          <input type="text" [(ngModel)]="routeForm.busNo" class="form-control" placeholder="e.g. BUS-01">
+        </div>
+        <div class="form-group">
+          <label>🗺️ Route Name *</label>
+          <input type="text" [(ngModel)]="routeForm.routeName" class="form-control" placeholder="e.g. Route A">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>📍 Route Line</label>
+        <input type="text" [(ngModel)]="routeForm.routeLine" class="form-control" placeholder="e.g. Mirpur - Gulshan">
+      </div>
+
+      <div class="form-group">
+        <label>📅 Operating Days *</label>
+        <div class="days-selector">
+          <button type="button" class="day-btn" *ngFor="let day of operatingDaysOptions"
+            [class.selected]="isOperatingDaySelected(day)"
+            (click)="toggleOperatingDay(day)">
+            {{ getDayShort(day) }}
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>📍 Pickup Points *</label>
+        <div class="pickup-list" *ngIf="routeForm.pickupPoints.length > 0">
+          <div class="pickup-item" *ngFor="let point of routeForm.pickupPoints; let i = index">
+            <span class="stop-order">{{ point.stopOrder }}</span>
+            <div class="pickup-info">
+              <strong>{{ point.placeName }}</strong>
+              <small>{{ point.placeDetails }} — {{ point.pickupTime }}</small>
+            </div>
+            <button type="button" class="btn-remove" (click)="removePickupPoint(i)">✕</button>
+          </div>
+        </div>
+
+        <div class="pickup-form">
+          <div class="form-row">
+            <div class="form-group">
+              <input type="text" [(ngModel)]="newPickupPoint.placeName" class="form-control" placeholder="Place Name *">
+            </div>
+            <div class="form-group">
+              <input type="time" [(ngModel)]="newPickupPoint.pickupTime" class="form-control">
+            </div>
+          </div>
+          <div class="form-group">
+            <input type="text" [(ngModel)]="newPickupPoint.placeDetails" class="form-control" placeholder="Place Details (optional)">
+          </div>
+          <button type="button" class="btn-add-point" (click)="addPickupPoint()">➕ Add Pickup Point</button>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" (click)="closeAddModal()">Cancel</button>
+        <button type="button" class="btn-save" [disabled]="actionLoading" (click)="saveRoute()">
+          💾 {{ actionLoading ? 'Saving...' : 'Save Route' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== EDIT MODAL ===== -->
+<div class="modal-overlay" *ngIf="showEditModal" (click)="closeEditModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>✏️ Edit Route</h3>
+      <button class="modal-close" (click)="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>🚌 Bus No *</label>
+          <input type="text" [(ngModel)]="routeForm.busNo" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>🗺️ Route Name *</label>
+          <input type="text" [(ngModel)]="routeForm.routeName" class="form-control">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>📍 Route Line</label>
+        <input type="text" [(ngModel)]="routeForm.routeLine" class="form-control">
+      </div>
+
+      <div class="form-group">
+        <label>📅 Operating Days *</label>
+        <div class="days-selector">
+          <button type="button" class="day-btn" *ngFor="let day of operatingDaysOptions"
+            [class.selected]="isOperatingDaySelected(day)"
+            (click)="toggleOperatingDay(day)">
+            {{ getDayShort(day) }}
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>📍 Pickup Points</label>
+        <div class="pickup-list" *ngIf="routeForm.pickupPoints.length > 0">
+          <div class="pickup-item" *ngFor="let point of routeForm.pickupPoints; let i = index">
+            <span class="stop-order">{{ point.stopOrder }}</span>
+            <div class="pickup-info">
+              <strong>{{ point.placeName }}</strong>
+              <small>{{ point.placeDetails }} — {{ point.pickupTime }}</small>
+            </div>
+            <button type="button" class="btn-remove" (click)="removePickupPoint(i)">✕</button>
+          </div>
+        </div>
+
+        <div class="pickup-form">
+          <div class="form-row">
+            <div class="form-group">
+              <input type="text" [(ngModel)]="newPickupPoint.placeName" class="form-control" placeholder="Place Name *">
+            </div>
+            <div class="form-group">
+              <input type="time" [(ngModel)]="newPickupPoint.pickupTime" class="form-control">
+            </div>
+          </div>
+          <div class="form-group">
+            <input type="text" [(ngModel)]="newPickupPoint.placeDetails" class="form-control" placeholder="Place Details (optional)">
+          </div>
+          <button type="button" class="btn-add-point" (click)="addPickupPoint()">➕ Add Pickup Point</button>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" (click)="closeEditModal()">Cancel</button>
+        <button type="button" class="btn-save" [disabled]="actionLoading" (click)="updateRoute()">
+          💾 {{ actionLoading ? 'Updating...' : 'Update Route' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DETAILS MODAL ===== -->
+<div class="modal-overlay" *ngIf="showDetailsModal" (click)="closeDetailsModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>🗺️ Route Details</h3>
+      <button class="modal-close" (click)="closeDetailsModal()">✕</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedRoute">
+      <div class="details-card">
+        <div class="detail-row"><label>Route Name:</label><span>{{ selectedRoute.routeName }}</span></div>
+        <div class="detail-row"><label>Bus No:</label><span>{{ selectedRoute.busNo }}</span></div>
+        <div class="detail-row"><label>Route Line:</label><span>{{ selectedRoute.routeLine }}</span></div>
+        <div class="detail-row">
+          <label>Status:</label>
+          <span class="status-badge" [class]="getStatusClass(selectedRoute.status)">{{ selectedRoute.status }}</span>
+        </div>
+        <div class="detail-row">
+          <label>Operating Days:</label>
+          <span class="days-row">
+            <span class="day-chip" *ngFor="let day of selectedRoute.operatingDays">{{ getDayShort(day) }}</span>
+          </span>
+        </div>
+        <div class="detail-row"><label>Created:</label><span>{{ selectedRoute.createdAt | date:'medium' }}</span></div>
+      </div>
+
+      <div class="pickup-section">
+        <h4>📍 Pickup Points</h4>
+        <div class="pickup-list">
+          <div class="pickup-item" *ngFor="let point of selectedRoute.pickupPoints">
+            <span class="stop-order">{{ point.stopOrder }}</span>
+            <div class="pickup-info">
+              <strong>{{ point.placeName }}</strong>
+              <small>{{ point.placeDetails }} — {{ point.pickupTime }}</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DELETE MODAL ===== -->
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
+  <div class="modal-container modal-small" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>⚠️ Confirm Delete</h3>
+      <button class="modal-close" (click)="closeDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to delete <strong>{{ selectedRoute?.routeName }}</strong>?</p>
+      <p class="warning-text">This action cannot be undone!</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="closeDeleteModal()">Cancel</button>
+        <button class="btn-delete-confirm" [disabled]="actionLoading" (click)="deleteRoute()">
+          🗑️ {{ actionLoading ? 'Deleting...' : 'Delete Permanently' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

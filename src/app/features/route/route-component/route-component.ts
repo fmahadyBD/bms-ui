@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouteService, RouteResponse, CreateRouteRequest, PickupPointRequest } from '../route.service';
@@ -13,13 +13,13 @@ import { RouteService, RouteResponse, CreateRouteRequest, PickupPointRequest } f
 export class RouteComponent implements OnInit {
   routes: RouteResponse[] = [];
   loading = false;
-  
+
   showAddModal = false;
   showEditModal = false;
   showDetailsModal = false;
   showDeleteModal = false;
   selectedRoute: RouteResponse | null = null;
-  
+
   routeForm: CreateRouteRequest = {
     busNo: '',
     routeName: '',
@@ -27,11 +27,11 @@ export class RouteComponent implements OnInit {
     operatingDays: [],
     pickupPoints: []
   };
-  
+
   operatingDaysOptions = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
   statusOptions = ['ACTIVE', 'INACTIVE'];
   actionLoading = false;
-  
+
   newPickupPoint: PickupPointRequest = {
     placeName: '',
     placeDetails: '',
@@ -41,8 +41,7 @@ export class RouteComponent implements OnInit {
 
   constructor(
     private routeService: RouteService,
-    private cdr: ChangeDetectorRef,
-    private ngZone: NgZone
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -75,6 +74,7 @@ export class RouteComponent implements OnInit {
     };
     this.newPickupPoint = { placeName: '', placeDetails: '', pickupTime: '', stopOrder: 1 };
     this.showAddModal = true;
+    this.cdr.detectChanges();
   }
 
   closeAddModal() {
@@ -95,7 +95,7 @@ export class RouteComponent implements OnInit {
   addPickupPoint() {
     if (this.newPickupPoint.placeName && this.newPickupPoint.pickupTime) {
       this.newPickupPoint.stopOrder = this.routeForm.pickupPoints.length + 1;
-      this.routeForm.pickupPoints.push({...this.newPickupPoint});
+      this.routeForm.pickupPoints.push({ ...this.newPickupPoint });
       this.newPickupPoint = {
         placeName: '',
         placeDetails: '',
@@ -111,6 +111,10 @@ export class RouteComponent implements OnInit {
   }
 
   saveRoute() {
+    if (!this.routeForm.busNo || !this.routeForm.routeName) {
+      this.showError('Please fill in all required fields');
+      return;
+    }
     if (this.routeForm.operatingDays.length === 0) {
       this.showError('Please select at least one operating day');
       return;
@@ -119,7 +123,6 @@ export class RouteComponent implements OnInit {
       this.showError('Please add at least one pickup point');
       return;
     }
-    
     this.actionLoading = true;
     this.routeService.createRoute(this.routeForm).subscribe({
       next: () => {
@@ -159,6 +162,7 @@ export class RouteComponent implements OnInit {
         stopOrder: pp.stopOrder
       }))
     };
+    this.newPickupPoint = { placeName: '', placeDetails: '', pickupTime: '', stopOrder: 1 };
     this.showEditModal = true;
   }
 
@@ -170,6 +174,10 @@ export class RouteComponent implements OnInit {
 
   updateRoute() {
     if (!this.selectedRoute) return;
+    if (this.routeForm.operatingDays.length === 0) {
+      this.showError('Please select at least one operating day');
+      return;
+    }
     this.actionLoading = true;
     this.routeService.updateRoute(this.selectedRoute.id, this.routeForm).subscribe({
       next: () => {
@@ -188,10 +196,10 @@ export class RouteComponent implements OnInit {
   updateStatus(route: RouteResponse, event: Event) {
     const select = event.target as HTMLSelectElement;
     const newStatus = select.value;
-    if (confirm(`Change status of ${route.routeName} to ${newStatus}?`)) {
+    if (confirm(`Change status of "${route.routeName}" to ${newStatus}?`)) {
       this.routeService.updateRouteStatus(route.id, newStatus).subscribe({
         next: () => {
-          this.showSuccess('Status updated successfully!');
+          this.showSuccess('Status updated!');
           this.loadRoutes();
         },
         error: () => this.showError('Failed to update status')
@@ -229,6 +237,10 @@ export class RouteComponent implements OnInit {
 
   getStatusClass(status: string): string {
     return status === 'ACTIVE' ? 'status-active' : 'status-inactive';
+  }
+
+  getDayShort(day: string): string {
+    return day.substring(0, 3);
   }
 
   private showSuccess(message: string) { alert(message); }
