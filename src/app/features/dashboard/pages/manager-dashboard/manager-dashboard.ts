@@ -1,303 +1,148 @@
-import { Component, OnInit } from '@angular/core';
+// manager-dashboard.component.ts
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
-import { StudentService } from '../../services/student';
-import { RouteService } from '../../services/route';
-import { RoutineService } from '../../services/routine';
+import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../../auth/services/auth';
+import { StudentService } from '../../services/student';
 
 @Component({
   selector: 'app-manager-dashboard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './manager-dashboard.html',
   styleUrls: ['./manager-dashboard.css']
 })
 export class ManagerDashboardComponent implements OnInit {
-  activeTab = 'students';
+  // User data from localStorage
+  userEmail: string = '';
+  userName: string = '';
   
-  // Student related
-  students: any[] = [];
-  selectedStudent: any = null;
+  // UI State
+  showProfileDropdown = false;
   loading = false;
   
-  // Route related
-  routes: any[] = [];
-  routeForm: FormGroup;
-  selectedRoute: any = null;
-  
-  // Routine related
-  routineForm: FormGroup;
-  routines: any[] = [];
-  
-  // Search
-  searchEmail = '';
-  searchPhone = '';
-  searchResult: any = null;
+  // Students data
+  students: any[] = [];
+  currentPage = 0;
+  pageSize = 10;
+  totalElements = 0;
+  totalPages = 0;
 
   constructor(
     private studentService: StudentService,
-    private routeService: RouteService,
-    private routineService: RoutineService,
     private authService: AuthService,
-    private fb: FormBuilder
-  ) {
-    this.routeForm = this.createRouteForm();
-    this.routineForm = this.createRoutineForm();
-  }
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
+  ) {}
 
   ngOnInit() {
-    this.loadStudents();
-    this.loadRoutes();
+    this.loadUserData();
+    this.loadAllStudents();
   }
 
-  // ============ TAB MANAGEMENT ============
-  changeTab(tab: string) {
-    this.activeTab = tab;
-    if (tab === 'students') this.loadStudents();
-    if (tab === 'routes') this.loadRoutes();
+  loadUserData() {
+    // Load from localStorage
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        this.userEmail = user.email || '';
+        this.userName = user.name || user.email?.split('@')[0] || 'Manager';
+      } catch (e) {
+        this.userEmail = localStorage.getItem('email') || '';
+        this.userName = this.userEmail?.split('@')[0] || 'Manager';
+      }
+    } else {
+      this.userEmail = localStorage.getItem('email') || 'manager@example.com';
+      this.userName = this.userEmail?.split('@')[0] || 'Manager';
+    }
   }
 
-  // ============ STUDENT MANAGEMENT ============
-  loadStudents() {
+  toggleProfileDropdown() {
+    this.showProfileDropdown = !this.showProfileDropdown;
+  }
+
+  closeProfileDropdown() {
+    setTimeout(() => {
+      this.showProfileDropdown = false;
+    }, 200);
+  }
+
+  loadAllStudents() {
     this.loading = true;
-    this.studentService.getAllStudents().subscribe({
-      next: (data) => {
-        this.students = data;
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error loading students:', error);
-        this.loading = false;
-        alert('Failed to load students');
-      }
-    });
-  }
-
-  viewStudent(student: any) {
-    this.selectedStudent = student;
-  }
-
-  closeStudentModal() {
-    this.selectedStudent = null;
-  }
-
-  blockStudent(studentId: string) {
-    if (confirm('Are you sure you want to block this student?')) {
-      this.studentService.blockStudent(studentId).subscribe({
-        next: () => {
-          alert('Student blocked successfully');
-          this.loadStudents();
+    this.ngZone.run(() => {
+      this.studentService.getAllStudents(this.currentPage, this.pageSize).subscribe({
+        next: (response) => {
+          this.students = response.content;
+          this.totalElements = response.totalElements;
+          this.totalPages = response.totalPages;
+          this.loading = false;
+          this.cdr.detectChanges();
         },
         error: (error) => {
-          console.error('Error blocking student:', error);
-          alert('Failed to block student');
+          console.error('Error loading students:', error);
+          this.loading = false;
+          this.cdr.detectChanges();
+          alert('Failed to load students: ' + (error.error?.message || error.message));
         }
       });
-    }
-  }
-
-  unblockStudent(studentId: string) {
-    if (confirm('Are you sure you want to unblock this student?')) {
-      this.studentService.unblockStudent(studentId).subscribe({
-        next: () => {
-          alert('Student unblocked successfully');
-          this.loadStudents();
-        },
-        error: (error) => {
-          console.error('Error unblocking student:', error);
-          alert('Failed to unblock student');
-        }
-      });
-    }
-  }
-
-  deleteStudent(studentId: string) {
-    if (confirm('Are you sure you want to delete this student? This action cannot be undone!')) {
-      this.studentService.deleteStudent(studentId).subscribe({
-        next: () => {
-          alert('Student deleted successfully');
-          this.loadStudents();
-        },
-        error: (error) => {
-          console.error('Error deleting student:', error);
-          alert('Failed to delete student');
-        }
-      });
-    }
-  }
-
-  assignRouteToStudent(studentId: string) {
-    const routeId = prompt('Enter Route ID to assign:');
-    if (routeId && !isNaN(parseInt(routeId))) {
-      this.studentService.assignRoute(studentId, parseInt(routeId)).subscribe({
-        next: () => {
-          alert('Route assigned successfully');
-          this.loadStudents();
-        },
-        error: (error) => {
-          console.error('Error assigning route:', error);
-          alert('Failed to assign route');
-        }
-      });
-    } else if (routeId) {
-      alert('Please enter a valid Route ID (number)');
-    }
-  }
-
-  // ============ SEARCH STUDENTS ============
-  searchByEmail() {
-    if (!this.searchEmail) {
-      alert('Please enter an email address');
-      return;
-    }
-    this.loading = true;
-    this.studentService.searchByEmail(this.searchEmail).subscribe({
-      next: (data) => {
-        this.searchResult = data;
-        alert(`Student found: ${data.name} (${data.studentId})`);
-        this.searchEmail = '';
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error searching student:', error);
-        alert('Student not found');
-        this.loading = false;
-      }
     });
   }
 
-  searchByPhone() {
-    if (!this.searchPhone) {
-      alert('Please enter a phone number');
-      return;
+  nextPage() {
+    if (this.currentPage + 1 < this.totalPages) {
+      this.currentPage++;
+      this.loadAllStudents();
     }
-    this.loading = true;
-    this.studentService.searchByPhone(this.searchPhone).subscribe({
-      next: (data) => {
-        this.searchResult = data;
-        alert(`Student found: ${data.name} (${data.studentId})`);
-        this.searchPhone = '';
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error searching student:', error);
-        alert('Student not found');
-        this.loading = false;
-      }
-    });
   }
 
-  // ============ ROUTE MANAGEMENT ============
-  createRouteForm(): FormGroup {
-    return this.fb.group({
-      busNo: ['', Validators.required],
-      routeName: ['', Validators.required],
-      routeLine: ['', Validators.required],
-      operatingDays: [['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'], Validators.required],
-      pickupPoints: [[]]
-    });
+  previousPage() {
+    if (this.currentPage > 0) {
+      this.currentPage--;
+      this.loadAllStudents();
+    }
   }
 
-  loadRoutes() {
-    this.routeService.getAllRoutes().subscribe({
-      next: (data) => {
-        this.routes = data;
-      },
-      error: (error) => {
-        console.error('Error loading routes:', error);
-        alert('Failed to load routes');
-      }
-    });
+  goToPage(page: number) {
+    if (page >= 0 && page < this.totalPages) {
+      this.currentPage = page;
+      this.loadAllStudents();
+    }
   }
 
-  createRoute() {
-    if (this.routeForm.invalid) {
-      alert('Please fill all required fields');
-      return;
+  getPages(): number[] {
+    const pages = [];
+    const maxVisible = 5;
+    let start = Math.max(0, this.currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(this.totalPages, start + maxVisible);
+    
+    if (end - start < maxVisible) {
+      start = Math.max(0, end - maxVisible);
     }
     
-    this.routeService.createRoute(this.routeForm.value).subscribe({
-      next: () => {
-        alert('Route created successfully');
-        this.routeForm.reset();
-        this.loadRoutes();
-      },
-      error: (error) => {
-        console.error('Error creating route:', error);
-        alert('Failed to create route');
-      }
-    });
-  }
-
-  updateRouteStatus(routeId: number, status: string) {
-    if (confirm(`Are you sure you want to ${status.toLowerCase()} this route?`)) {
-      this.routeService.updateRouteStatus(routeId, status).subscribe({
-        next: () => {
-          alert(`Route ${status} successfully`);
-          this.loadRoutes();
-        },
-        error: (error) => {
-          console.error('Error updating route status:', error);
-          alert('Failed to update route status');
-        }
-      });
+    for (let i = start; i < end; i++) {
+      pages.push(i);
     }
-  }
-
-  deleteRoute(routeId: number) {
-    if (confirm('Are you sure you want to delete this route?')) {
-      this.routeService.deleteRoute(routeId).subscribe({
-        next: () => {
-          alert('Route deleted successfully');
-          this.loadRoutes();
-        },
-        error: (error) => {
-          console.error('Error deleting route:', error);
-          alert('Failed to delete route');
-        }
-      });
-    }
-  }
-
-  // ============ ROUTINE MANAGEMENT ============
-  createRoutineForm(): FormGroup {
-    return this.fb.group({
-      courseName: ['', Validators.required],
-      courseCode: ['', Validators.required],
-      teacherName: ['', Validators.required],
-      day: ['MONDAY', Validators.required],
-      startTime: ['09:00:00', Validators.required],
-      endTime: ['10:30:00', Validators.required],
-      roomNumber: ['', Validators.required],
-      department: ['', Validators.required],
-      batch: ['', Validators.required],
-      routineType: ['CLASS', Validators.required],
-      routeId: [null]
-    });
-  }
-
-  createRoutine() {
-    if (this.routineForm.invalid) {
-      alert('Please fill all required fields');
-      return;
-    }
-    
-    this.routineService.createRoutine(this.routineForm.value).subscribe({
-      next: () => {
-        alert('Routine created successfully');
-        this.routineForm.reset();
-      },
-      error: (error) => {
-        console.error('Error creating routine:', error);
-        alert('Failed to create routine');
-      }
-    });
+    return pages;
   }
 
   logout() {
     if (confirm('Are you sure you want to logout?')) {
-      this.authService.logout().subscribe();
+      this.authService.logout().subscribe({
+        next: () => {
+          // Clear localStorage
+          localStorage.removeItem('user');
+          localStorage.removeItem('email');
+          localStorage.removeItem('token');
+          // Navigation handled in AuthService
+        },
+        error: (error) => {
+          console.error('Logout error:', error);
+          // Force logout anyway
+          localStorage.clear();
+          window.location.href = '/login';
+        }
+      });
     }
   }
 }

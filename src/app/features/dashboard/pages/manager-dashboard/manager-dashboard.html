@@ -1,275 +1,127 @@
+<!-- manager-dashboard.component.html -->
 <div class="dashboard-container">
-  <!-- Sidebar -->
-  <div class="sidebar">
+  <!-- Modern Navbar -->
+  <nav class="navbar">
     <div class="logo">
-      <h2>BMS Manager</h2>
+      <span class="logo-icon">🚌</span>
+      <span class="logo-text">Bus<span>Manager</span></span>
     </div>
-    <nav class="nav-menu">
-      <button (click)="changeTab('students')" [class.active]="activeTab === 'students'">
-        👥 Manage Students
-      </button>
-      <button (click)="changeTab('routes')" [class.active]="activeTab === 'routes'">
-        🚌 Manage Routes
-      </button>
-      <button (click)="changeTab('routines')" [class.active]="activeTab === 'routines'">
-        📅 Manage Routines
-      </button>
-      <button (click)="logout()" class="logout-btn">
-        🚪 Logout
-      </button>
-    </nav>
-  </div>
+    
+    <div class="profile-section" (click)="toggleProfileDropdown()" (clickoutside)="closeProfileDropdown()">
+      <div class="profile-btn">
+        <div class="avatar">
+          {{ (userName | slice:0:2).toUpperCase() }}
+        </div>
+        <div class="profile-info">
+          <span class="profile-name">{{ userName }}</span>
+          <span class="profile-email">{{ userEmail }}</span>
+        </div>
+        <span class="chevron" [class.open]="showProfileDropdown">▼</span>
+      </div>
+      
+      <!-- Dropdown Menu -->
+      <div class="dropdown-menu" *ngIf="showProfileDropdown">
+        <div class="dropdown-header">
+          <div class="dropdown-avatar">
+            {{ (userName | slice:0:2).toUpperCase() }}
+          </div>
+          <h4>{{ userName }}</h4>
+          <p>{{ userEmail }}</p>
+        </div>
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-item">
+          <span class="dropdown-icon">👤</span>
+          <span>Profile Settings</span>
+        </div>
+        <div class="dropdown-item">
+          <span class="dropdown-icon">🔔</span>
+          <span>Notifications</span>
+        </div>
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-item logout-item" (click)="logout()">
+          <span class="dropdown-icon">🚪</span>
+          <span>Logout</span>
+        </div>
+      </div>
+    </div>
+  </nav>
 
   <!-- Main Content -->
-  <div class="main-content">
-    
-    <!-- STUDENTS TAB -->
-    <div *ngIf="activeTab === 'students'" class="tab-content">
-      <!-- Search Section -->
-      <div class="search-section card">
-        <h3>🔍 Search Students</h3>
-        <div class="search-boxes">
-          <div class="search-group">
-            <input type="email" [(ngModel)]="searchEmail" placeholder="Search by Email" class="form-control">
-            <button (click)="searchByEmail()" class="btn-search">Search</button>
-          </div>
-          <div class="search-group">
-            <input type="text" [(ngModel)]="searchPhone" placeholder="Search by Phone" class="form-control">
-            <button (click)="searchByPhone()" class="btn-search">Search</button>
-          </div>
-        </div>
+  <main class="main-content">
+    <div class="content-card">
+      <div class="card-header">
+        <h2>
+          <span class="header-icon">👨‍🎓</span>
+          All Students
+          <span class="stats-badge">Total: {{ totalElements }}</span>
+        </h2>
       </div>
-
-      <!-- Students List -->
-      <div class="card">
-        <h3>👥 All Students ({{students.length}})</h3>
-        <div *ngIf="loading" class="loading">Loading...</div>
-        <div class="students-table" *ngIf="!loading">
-          <div class="table-responsive">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Department</th>
-                  <th>Batch</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let student of students">
-                  <td>{{student.studentId}}</td>
-                  <td>{{student.name}}</td>
-                  <td>{{student.email}}</td>
-                  <td>{{student.department}}</td>
-                  <td>{{student.batch}}</td>
-                  <td>
-                    <span [class]="student.blocked ? 'status-badge blocked' : 'status-badge active'">
-                      {{student.blocked ? 'Blocked' : 'Active'}}
-                    </span>
-                  </td>
-                  <td class="actions">
-                    <button (click)="viewStudent(student)" class="btn-view" title="View Details">👁️</button>
-                    <button (click)="assignRouteToStudent(student.studentId)" class="btn-route" title="Assign Route">🚌</button>
-                    <button *ngIf="!student.blocked" (click)="blockStudent(student.studentId)" class="btn-block" title="Block">🔒</button>
-                    <button *ngIf="student.blocked" (click)="unblockStudent(student.studentId)" class="btn-unblock" title="Unblock">🔓</button>
-                    <button (click)="deleteStudent(student.studentId)" class="btn-delete" title="Delete">🗑️</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+      
+      <!-- Loading State -->
+      <div *ngIf="loading" class="loading-spinner">
+        <div class="spinner"></div>
+        <p style="margin-top: 1rem; color: var(--sea-green);">Loading students...</p>
       </div>
-    </div>
-
-    <!-- ROUTES TAB -->
-    <div *ngIf="activeTab === 'routes'" class="tab-content">
-      <!-- Create Route Form -->
-      <div class="card">
-        <h3>➕ Create New Route</h3>
-        <form [formGroup]="routeForm" (ngSubmit)="createRoute()">
-          <div class="form-row">
-            <div class="form-group">
-              <label>Bus Number *</label>
-              <input formControlName="busNo" class="form-control" placeholder="e.g., BUS-01">
-            </div>
-            <div class="form-group">
-              <label>Route Name *</label>
-              <input formControlName="routeName" class="form-control" placeholder="e.g., Gulshan - GUB">
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Route Line *</label>
-            <textarea formControlName="routeLine" rows="2" class="form-control" placeholder="e.g., Gulshan 1 → Banani → Farmgate → Shahbag → GUB"></textarea>
-          </div>
-          <div class="form-group">
-            <label>Operating Days</label>
-            <select multiple formControlName="operatingDays" class="form-control" size="4">
-              <option>MONDAY</option>
-              <option>TUESDAY</option>
-              <option>WEDNESDAY</option>
-              <option>THURSDAY</option>
-              <option>FRIDAY</option>
-              <option>SATURDAY</option>
-              <option>SUNDAY</option>
-            </select>
-            <small>Hold Ctrl/Cmd to select multiple days</small>
-          </div>
-          <button type="submit" class="btn-create" [disabled]="routeForm.invalid">Create Route</button>
-        </form>
-      </div>
-
-      <!-- Routes List -->
-      <div class="card">
-        <h3>🚌 All Routes ({{routes.length}})</h3>
-        <div class="routes-list">
-          <div *ngFor="let route of routes" class="route-item">
-            <div class="route-info">
-              <div class="route-title">
-                <strong>{{route.busNo}}</strong> - {{route.routeName}}
-                <span [class]="route.status === 'INACTIVE' ? 'status-badge inactive' : 'status-badge active'">
-                  {{route.status || 'ACTIVE'}}
+      
+      <!-- Students Table -->
+      <div *ngIf="!loading && students.length > 0" class="students-table-container">
+        <table class="students-table">
+          <thead>
+            <tr>
+              <th>Student ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Department</th>
+              <th>Batch</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let student of students">
+              <td><strong>{{ student.studentId }}</strong></td>
+              <td>{{ student.name }}</td>
+              <td>{{ student.email }}</td>
+              <td>{{ student.phoneNumber || 'N/A' }}</td>
+              <td>{{ student.department || 'N/A' }}</td>
+              <td>{{ student.batch || 'N/A' }}</td>
+              <td>
+                <span class="status-badge" [class.status-active]="!student.blocked" [class.status-blocked]="student.blocked">
+                  {{ student.blocked ? 'Blocked' : 'Active' }}
                 </span>
-              </div>
-              <div class="route-line">{{route.routeLine}}</div>
-              <div class="route-days" *ngIf="route.operatingDays">
-                <small>Operating: {{route.operatingDays.join(', ')}}</small>
-              </div>
-            </div>
-            <div class="route-actions">
-              <button (click)="updateRouteStatus(route.id, 'INACTIVE')" class="btn-disable" *ngIf="route.status !== 'INACTIVE'">Disable</button>
-              <button (click)="updateRouteStatus(route.id, 'ACTIVE')" class="btn-enable" *ngIf="route.status === 'INACTIVE'">Enable</button>
-              <button (click)="deleteRoute(route.id)" class="btn-delete">Delete</button>
-            </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <!-- Pagination -->
+        <div class="pagination">
+          <button class="page-btn" [disabled]="currentPage === 0" (click)="previousPage()">
+            ← Previous
+          </button>
+          
+          <div class="page-numbers">
+            <button 
+              *ngFor="let page of getPages()"
+              class="page-number"
+              [class.active]="page === currentPage"
+              (click)="goToPage(page)">
+              {{ page + 1 }}
+            </button>
           </div>
-          <div *ngIf="routes.length === 0" class="no-data">
-            No routes found. Create your first route!
-          </div>
+          
+          <button class="page-btn" [disabled]="currentPage + 1 >= totalPages" (click)="nextPage()">
+            Next →
+          </button>
         </div>
       </div>
-    </div>
-
-    <!-- ROUTINES TAB -->
-    <div *ngIf="activeTab === 'routines'" class="tab-content">
-      <div class="card">
-        <h3>📅 Create Routine</h3>
-        <form [formGroup]="routineForm" (ngSubmit)="createRoutine()">
-          <div class="form-row">
-            <div class="form-group">
-              <label>Course Name *</label>
-              <input formControlName="courseName" class="form-control" placeholder="e.g., Data Structures">
-            </div>
-            <div class="form-group">
-              <label>Course Code *</label>
-              <input formControlName="courseCode" class="form-control" placeholder="e.g., CSE-2201">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Teacher Name *</label>
-              <input formControlName="teacherName" class="form-control" placeholder="e.g., Prof. Rahman">
-            </div>
-            <div class="form-group">
-              <label>Day *</label>
-              <select formControlName="day" class="form-control">
-                <option>MONDAY</option>
-                <option>TUESDAY</option>
-                <option>WEDNESDAY</option>
-                <option>THURSDAY</option>
-                <option>FRIDAY</option>
-                <option>SATURDAY</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Start Time *</label>
-              <input type="time" formControlName="startTime" class="form-control">
-            </div>
-            <div class="form-group">
-              <label>End Time *</label>
-              <input type="time" formControlName="endTime" class="form-control">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Room Number *</label>
-              <input formControlName="roomNumber" class="form-control" placeholder="e.g., Room 401">
-            </div>
-            <div class="form-group">
-              <label>Routine Type *</label>
-              <select formControlName="routineType" class="form-control">
-                <option>CLASS</option>
-                <option>EXAM</option>
-                <option>LAB</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Department *</label>
-              <input formControlName="department" class="form-control" placeholder="e.g., Computer Science">
-            </div>
-            <div class="form-group">
-              <label>Batch *</label>
-              <input formControlName="batch" class="form-control" placeholder="e.g., 2021">
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Route ID (Optional)</label>
-            <input type="number" formControlName="routeId" class="form-control" placeholder="Enter route ID if applicable">
-          </div>
-          <button type="submit" class="btn-create" [disabled]="routineForm.invalid">Create Routine</button>
-        </form>
+      
+      <!-- Empty State -->
+      <div *ngIf="!loading && students.length === 0" class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h3>No Students Found</h3>
+        <p>There are no students registered in the system yet.</p>
       </div>
     </div>
-
-    <!-- Student Details Modal -->
-    <div *ngIf="selectedStudent" class="modal" (click)="closeStudentModal()">
-      <div class="modal-content" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h2>Student Details</h2>
-          <span class="close" (click)="closeStudentModal()">&times;</span>
-        </div>
-        <div class="student-details">
-          <div class="detail-row">
-            <strong>Student ID:</strong> {{selectedStudent.studentId}}
-          </div>
-          <div class="detail-row">
-            <strong>Name:</strong> {{selectedStudent.name}}
-          </div>
-          <div class="detail-row">
-            <strong>Email:</strong> {{selectedStudent.email}}
-          </div>
-          <div class="detail-row">
-            <strong>Phone:</strong> {{selectedStudent.phoneNumber}}
-          </div>
-          <div class="detail-row">
-            <strong>Address:</strong> {{selectedStudent.address}}
-          </div>
-          <div class="detail-row">
-            <strong>Department:</strong> {{selectedStudent.department}}
-          </div>
-          <div class="detail-row">
-            <strong>Batch:</strong> {{selectedStudent.batch}}
-          </div>
-          <div class="detail-row">
-            <strong>Shift:</strong> {{selectedStudent.shift}}
-          </div>
-          <div class="detail-row">
-            <strong>Gender:</strong> {{selectedStudent.gender}}
-          </div>
-          <div class="detail-row">
-            <strong>Status:</strong> 
-            <span [class]="selectedStudent.blocked ? 'status-badge blocked' : 'status-badge active'">
-              {{selectedStudent.blocked ? 'Blocked' : 'Active'}}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  </main>
 </div>

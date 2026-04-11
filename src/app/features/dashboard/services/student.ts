@@ -10,8 +10,18 @@ export class StudentService {
 
   constructor(private http: HttpClient) { }
 
-  getAllStudents(): Observable<any> {
-    return this.http.get(`${this.baseUrl}`);
+
+  getAllStudents(page: number = 0, size: number = 20): Observable<any> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    // Your backend endpoint is just /api/v1/students with page/size params
+    return this.http.get(`${this.baseUrl}`, { params });
+  }
+
+  // Heavy endpoint - avoid for listing
+  getAllStudentsUnpaginated(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/all`);
   }
 
   getStudentById(studentId: string): Observable<any> {
@@ -62,13 +72,8 @@ export class StudentService {
     return this.http.patch(`${this.baseUrl}/${studentId}/unblock`, {});
   }
 
-  // Fixed: responseType 'text' because backend returns plain string, not JSON
   changePassword(studentId: string, passwords: any): Observable<any> {
-    return this.http.patch(
-      `${this.baseUrl}/${studentId}/change-password`,
-      passwords,
-      { responseType: 'text' }
-    );
+    return this.http.patch(`${this.baseUrl}/${studentId}/change-password`, passwords, { responseType: 'text' });
   }
 
   deleteStudent(studentId: string): Observable<any> {

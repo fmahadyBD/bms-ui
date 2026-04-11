@@ -1,10 +1,12 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 import { roleGuard } from './guards/role.guard';
+import { loggedInGuard } from './guards/logged-in.guard'; // ← new guard
 
 export const routes: Routes = [
   {
     path: '',
+    canActivate: [loggedInGuard], // ← redirects away if already logged in
     loadComponent: () => import('./features/landing/pages/landing-page/landing-page').then(m => m.LandingPage)
   },
   {

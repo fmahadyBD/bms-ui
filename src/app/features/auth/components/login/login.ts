@@ -1,3 +1,4 @@
+// login.ts
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -37,37 +38,16 @@ export class LoginComponent {
 
     this.authService.login(this.loginForm.value).subscribe({
       next: (response: any) => {
-        console.log('Login successful. Response:', response);
-        console.log('User type:', response.userType);
+        console.log('Login successful', response);
         
         const userType = response.userType;
         
-        // Debug: Check if router is available
-        console.log('Router available:', !!this.router);
-        
-        // Try to navigate
+        // Navigate based on user type - NO PAGE RELOAD
         if (userType === 'STUDENT') {
-          console.log('Navigating to student-dashboard');
-          this.router.navigate(['/student-dashboard']).then(success => {
-            console.log('Navigation success:', success);
-            if (!success) {
-              console.error('Navigation failed! Check if route exists');
-            }
-          }).catch(err => {
-            console.error('Navigation error:', err);
-          });
+          this.router.navigate(['/student-dashboard']);
         } else if (userType === 'MANAGER') {
-          console.log('Navigating to manager-dashboard');
-          this.router.navigate(['/manager-dashboard']).then(success => {
-            console.log('Navigation success:', success);
-            if (!success) {
-              console.error('Navigation failed! Check if route exists');
-            }
-          }).catch(err => {
-            console.error('Navigation error:', err);
-          });
+          this.router.navigate(['/manager-dashboard']);
         } else {
-          console.log('Unknown user type, navigating to home');
           this.router.navigate(['/']);
         }
         
