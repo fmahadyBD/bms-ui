@@ -82,6 +82,11 @@ export class NavbarComponent implements OnInit {
     this.mobileMenuOpen = false;
   }
 
+  navigateToBusSlots() {
+    this.router.navigate(['/manager-dashboard/bus-slots']);
+    this.mobileMenuOpen = false;
+  }
+
   navigateToReports() {
     this.router.navigate(['/manager-dashboard/students']);
     this.mobileMenuOpen = false;
