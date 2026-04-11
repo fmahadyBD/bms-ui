@@ -479,3 +479,73 @@
   .routes-grid { grid-template-columns: 1fr; }
   .page-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
 }
+
+
+
+/* Add to route-component.css */
+
+/* Pickup hint styling */
+.pickup-hint {
+  background: #e7f3ff;
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.text-muted {
+  color: #0066cc;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+/* Ensure buttons are properly styled */
+.btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-add-point {
+  background: var(--frosted-mint);
+  border: 1px dashed var(--sea-green);
+  color: var(--dark-emerald);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+}
+
+.btn-add-point:hover {
+  background: var(--celadon);
+}
+
+/* Add to route-component.css */
+
+.error-message {
+  color: #dc3545;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.form-control.ng-invalid.ng-touched {
+  border-color: #dc3545;
+}
+
+.form-control.ng-valid.ng-touched {
+  border-color: #28a745;
+}
+
+.form-text {
+  font-size: 0.7rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

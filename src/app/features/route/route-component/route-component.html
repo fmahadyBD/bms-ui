@@ -277,3 +277,146 @@
     </div>
   </div>
 </div>
+
+
+<!-- ===== ADD MODAL with Validation ===== -->
+<div class="modal-overlay" *ngIf="showAddModal" (click)="closeAddModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>➕ Add New Route</h3>
+      <button class="modal-close" (click)="closeAddModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <form #routeForm="ngForm">
+        <!-- Bus Number Field -->
+        <div class="form-group">
+          <label>🚌 Bus No *</label>
+          <input type="text" 
+                 [(ngModel)]="routeFormData.busNo" 
+                 name="busNo"
+                 #busNo="ngModel"
+                 class="form-control" 
+                 placeholder="e.g. BUS-001"
+                 required
+                 pattern="^BUS-\d{3}$">
+          <div class="error-message" *ngIf="busNo.invalid && (busNo.dirty || busNo.touched)">
+            <span *ngIf="busNo.errors?.['required']">Bus number is required</span>
+            <span *ngIf="busNo.errors?.['pattern']">Bus number must follow format: BUS-001, BUS-002, etc.</span>
+          </div>
+          <small class="form-text">Format: BUS-001, BUS-002, BUS-999</small>
+        </div>
+
+        <!-- Route Name Field -->
+        <div class="form-group">
+          <label>🗺️ Route Name *</label>
+          <input type="text" 
+                 [(ngModel)]="routeFormData.routeName" 
+                 name="routeName"
+                 #routeName="ngModel"
+                 class="form-control" 
+                 placeholder="e.g. Dhaka to Chittagong"
+                 required
+                 minlength="3"
+                 maxlength="100">
+          <div class="error-message" *ngIf="routeName.invalid && (routeName.dirty || routeName.touched)">
+            <span *ngIf="routeName.errors?.['required']">Route name is required</span>
+            <span *ngIf="routeName.errors?.['minlength']">Route name must be at least 3 characters</span>
+            <span *ngIf="routeName.errors?.['maxlength']">Route name cannot exceed 100 characters</span>
+          </div>
+        </div>
+
+        <!-- Route Line Field -->
+        <div class="form-group">
+          <label>📍 Route Line *</label>
+          <input type="text" 
+                 [(ngModel)]="routeFormData.routeLine" 
+                 name="routeLine"
+                 #routeLine="ngModel"
+                 class="form-control" 
+                 placeholder="e.g. Dhaka → Cumilla → Chittagong"
+                 required
+                 minlength="5"
+                 maxlength="255">
+          <div class="error-message" *ngIf="routeLine.invalid && (routeLine.dirty || routeLine.touched)">
+            <span *ngIf="routeLine.errors?.['required']">Route line is required</span>
+            <span *ngIf="routeLine.errors?.['minlength']">Route line must be at least 5 characters</span>
+            <span *ngIf="routeLine.errors?.['maxlength']">Route line cannot exceed 255 characters</span>
+          </div>
+        </div>
+
+        <!-- Operating Days Field -->
+        <div class="form-group">
+          <label>📅 Operating Days *</label>
+          <div class="days-selector">
+            <button type="button" 
+                    class="day-btn" 
+                    *ngFor="let day of operatingDaysOptions"
+                    [class.selected]="isOperatingDaySelected(day)"
+                    (click)="toggleOperatingDay(day)">
+              {{ getDayShort(day) }}
+            </button>
+          </div>
+          <div class="error-message" *ngIf="routeFormData.operatingDays.length === 0 && (submitted)">
+            Please select at least one operating day
+          </div>
+        </div>
+
+        <!-- Pickup Points Field (Now Required by Backend) -->
+        <div class="form-group">
+          <label>📍 Pickup Points *</label>
+          
+          <!-- List of added pickup points -->
+          <div class="pickup-list" *ngIf="routeFormData.pickupPoints.length > 0">
+            <div class="pickup-item" *ngFor="let point of routeFormData.pickupPoints; let i = index">
+              <span class="stop-order">{{ point.stopOrder }}</span>
+              <div class="pickup-info">
+                <strong>{{ point.placeName }}</strong>
+                <small>{{ point.placeDetails }} — {{ point.pickupTime }}</small>
+              </div>
+              <button type="button" class="btn-remove" (click)="removePickupPoint(i)">✕</button>
+            </div>
+          </div>
+
+          <!-- Error message for pickup points -->
+          <div class="error-message" *ngIf="routeFormData.pickupPoints.length === 0 && (submitted)">
+            At least one pickup point is required
+          </div>
+
+          <!-- Form to add new pickup point -->
+          <div class="pickup-form">
+            <div class="form-row">
+              <div class="form-group">
+                <input type="text" 
+                       [(ngModel)]="newPickupPoint.placeName" 
+                       name="placeName"
+                       class="form-control" 
+                       placeholder="Place Name *">
+              </div>
+              <div class="form-group">
+                <input type="time" 
+                       [(ngModel)]="newPickupPoint.pickupTime" 
+                       name="pickupTime"
+                       class="form-control">
+              </div>
+            </div>
+            <div class="form-group">
+              <input type="text" 
+                     [(ngModel)]="newPickupPoint.placeDetails" 
+                     name="placeDetails"
+                     class="form-control" 
+                     placeholder="Place Details (optional)">
+            </div>
+            <button type="button" class="btn-add-point" (click)="addPickupPoint()">➕ Add Pickup Point</button>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="closeAddModal()">Cancel</button>
+          <button type="button" class="btn-save" [disabled]="actionLoading" (click)="saveRouteWithValidation()">
+            💾 {{ actionLoading ? 'Saving...' : 'Save Route' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

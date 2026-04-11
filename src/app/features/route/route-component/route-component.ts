@@ -1,3 +1,4 @@
+// route-component.ts (updated)
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -20,7 +21,7 @@ export class RouteComponent implements OnInit {
   showDeleteModal = false;
   selectedRoute: RouteResponse | null = null;
 
-  routeForm: CreateRouteRequest = {
+  routeFormData: CreateRouteRequest = {
     busNo: '',
     routeName: '',
     routeLine: '',
@@ -31,6 +32,7 @@ export class RouteComponent implements OnInit {
   operatingDaysOptions = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
   statusOptions = ['ACTIVE', 'INACTIVE'];
   actionLoading = false;
+  submitted = false;
 
   newPickupPoint: PickupPointRequest = {
     placeName: '',
@@ -65,7 +67,7 @@ export class RouteComponent implements OnInit {
   }
 
   openAddModal() {
-    this.routeForm = {
+    this.routeFormData = {
       busNo: '',
       routeName: '',
       routeLine: '',
@@ -73,6 +75,7 @@ export class RouteComponent implements OnInit {
       pickupPoints: []
     };
     this.newPickupPoint = { placeName: '', placeDetails: '', pickupTime: '', stopOrder: 1 };
+    this.submitted = false;
     this.showAddModal = true;
     this.cdr.detectChanges();
   }
@@ -80,51 +83,108 @@ export class RouteComponent implements OnInit {
   closeAddModal() {
     this.showAddModal = false;
     this.actionLoading = false;
+    this.submitted = false;
   }
 
   toggleOperatingDay(day: string) {
-    const index = this.routeForm.operatingDays.indexOf(day);
-    if (index > -1) this.routeForm.operatingDays.splice(index, 1);
-    else this.routeForm.operatingDays.push(day);
+    const index = this.routeFormData.operatingDays.indexOf(day);
+    if (index > -1) this.routeFormData.operatingDays.splice(index, 1);
+    else this.routeFormData.operatingDays.push(day);
   }
 
   isOperatingDaySelected(day: string): boolean {
-    return this.routeForm.operatingDays.includes(day);
+    return this.routeFormData.operatingDays.includes(day);
   }
 
   addPickupPoint() {
     if (this.newPickupPoint.placeName && this.newPickupPoint.pickupTime) {
-      this.newPickupPoint.stopOrder = this.routeForm.pickupPoints.length + 1;
-      this.routeForm.pickupPoints.push({ ...this.newPickupPoint });
+      // Validate pickup time format
+      const timePattern = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+      if (!timePattern.test(this.newPickupPoint.pickupTime)) {
+        this.showError('Pickup time must be in format HH:MM');
+        return;
+      }
+      
+      this.newPickupPoint.stopOrder = this.routeFormData.pickupPoints.length + 1;
+      this.routeFormData.pickupPoints.push({ ...this.newPickupPoint });
       this.newPickupPoint = {
         placeName: '',
         placeDetails: '',
         pickupTime: '',
-        stopOrder: this.routeForm.pickupPoints.length + 1
+        stopOrder: this.routeFormData.pickupPoints.length + 1
       };
+    } else {
+      this.showError('Please fill in Place Name and Pickup Time');
     }
   }
 
   removePickupPoint(index: number) {
-    this.routeForm.pickupPoints.splice(index, 1);
-    this.routeForm.pickupPoints.forEach((point, idx) => point.stopOrder = idx + 1);
+    this.routeFormData.pickupPoints.splice(index, 1);
+    this.routeFormData.pickupPoints.forEach((point, idx) => point.stopOrder = idx + 1);
   }
 
-  saveRoute() {
-    if (!this.routeForm.busNo || !this.routeForm.routeName) {
-      this.showError('Please fill in all required fields');
-      return;
+  // Validate bus number format
+  isValidBusNumber(busNo: string): boolean {
+    const pattern = /^BUS-\d{3}$/;
+    return pattern.test(busNo);
+  }
+
+  // Validate all fields before saving
+  validateForm(): boolean {
+    // Check bus number
+    if (!this.routeFormData.busNo) {
+      this.showError('Bus number is required');
+      return false;
     }
-    if (this.routeForm.operatingDays.length === 0) {
+    if (!this.isValidBusNumber(this.routeFormData.busNo)) {
+      this.showError('Bus number must follow format: BUS-001, BUS-002, etc.');
+      return false;
+    }
+
+    // Check route name
+    if (!this.routeFormData.routeName) {
+      this.showError('Route name is required');
+      return false;
+    }
+    if (this.routeFormData.routeName.length < 3) {
+      this.showError('Route name must be at least 3 characters');
+      return false;
+    }
+
+    // Check route line
+    if (!this.routeFormData.routeLine) {
+      this.showError('Route line is required');
+      return false;
+    }
+    if (this.routeFormData.routeLine.length < 5) {
+      this.showError('Route line must be at least 5 characters');
+      return false;
+    }
+
+    // Check operating days
+    if (this.routeFormData.operatingDays.length === 0) {
       this.showError('Please select at least one operating day');
+      return false;
+    }
+
+    // Check pickup points
+    if (this.routeFormData.pickupPoints.length === 0) {
+      this.showError('At least one pickup point is required');
+      return false;
+    }
+
+    return true;
+  }
+
+  saveRouteWithValidation() {
+    this.submitted = true;
+    
+    if (!this.validateForm()) {
       return;
     }
-    if (this.routeForm.pickupPoints.length === 0) {
-      this.showError('Please add at least one pickup point');
-      return;
-    }
+
     this.actionLoading = true;
-    this.routeService.createRoute(this.routeForm).subscribe({
+    this.routeService.createRoute(this.routeFormData).subscribe({
       next: () => {
         this.showSuccess('Route added successfully!');
         this.closeAddModal();
@@ -132,10 +192,21 @@ export class RouteComponent implements OnInit {
         this.actionLoading = false;
       },
       error: (error) => {
-        this.showError('Failed to add route: ' + (error.error?.message || error.message));
+        let errorMessage = 'Failed to add route';
+        if (error.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error.error?.errors) {
+          errorMessage = error.error.errors.map((e: any) => e.message).join(', ');
+        }
+        this.showError(errorMessage);
         this.actionLoading = false;
       }
     });
+  }
+
+  // Original save method (keep for compatibility)
+  saveRoute() {
+    this.saveRouteWithValidation();
   }
 
   viewDetails(route: RouteResponse) {
@@ -150,7 +221,7 @@ export class RouteComponent implements OnInit {
 
   editRoute(route: RouteResponse) {
     this.selectedRoute = route;
-    this.routeForm = {
+    this.routeFormData = {
       busNo: route.busNo,
       routeName: route.routeName,
       routeLine: route.routeLine,
@@ -163,6 +234,7 @@ export class RouteComponent implements OnInit {
       }))
     };
     this.newPickupPoint = { placeName: '', placeDetails: '', pickupTime: '', stopOrder: 1 };
+    this.submitted = false;
     this.showEditModal = true;
   }
 
@@ -170,16 +242,18 @@ export class RouteComponent implements OnInit {
     this.showEditModal = false;
     this.selectedRoute = null;
     this.actionLoading = false;
+    this.submitted = false;
   }
 
-  updateRoute() {
+  updateRouteWithValidation() {
     if (!this.selectedRoute) return;
-    if (this.routeForm.operatingDays.length === 0) {
-      this.showError('Please select at least one operating day');
+    
+    if (!this.validateForm()) {
       return;
     }
+    
     this.actionLoading = true;
-    this.routeService.updateRoute(this.selectedRoute.id, this.routeForm).subscribe({
+    this.routeService.updateRoute(this.selectedRoute.id, this.routeFormData).subscribe({
       next: () => {
         this.showSuccess('Route updated successfully!');
         this.closeEditModal();
@@ -187,10 +261,18 @@ export class RouteComponent implements OnInit {
         this.actionLoading = false;
       },
       error: (error) => {
-        this.showError('Failed to update route: ' + (error.error?.message || error.message));
+        let errorMessage = 'Failed to update route';
+        if (error.error?.message) {
+          errorMessage = error.error.message;
+        }
+        this.showError(errorMessage);
         this.actionLoading = false;
       }
     });
+  }
+
+  updateRoute() {
+    this.updateRouteWithValidation();
   }
 
   updateStatus(route: RouteResponse, event: Event) {
@@ -243,6 +325,11 @@ export class RouteComponent implements OnInit {
     return day.substring(0, 3);
   }
 
-  private showSuccess(message: string) { alert(message); }
-  private showError(message: string) { alert(message); }
+  private showSuccess(message: string) { 
+    alert(message); 
+  }
+  
+  private showError(message: string) { 
+    alert(message); 
+  }
 }
