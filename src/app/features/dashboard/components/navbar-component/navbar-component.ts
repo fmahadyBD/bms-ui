@@ -87,15 +87,20 @@ export class NavbarComponent implements OnInit {
     this.mobileMenuOpen = false;
   }
 
+  navigateToSurveys() {
+    this.router.navigate(['/manager-dashboard/surveys']);
+    this.mobileMenuOpen = false;
+  }
+
   navigateToReports() {
-    this.router.navigate(['/manager-dashboard/students']);
+    this.router.navigate(['/manager-dashboard/reports']);
     this.mobileMenuOpen = false;
   }
 
   navigateToProfile(event?: Event) {
     event?.stopPropagation();
     this.showProfileDropdown = false;
-    this.router.navigate(['/manager-dashboard/students']);
+    this.router.navigate(['/manager-dashboard/profile']);
     this.mobileMenuOpen = false;
   }
 

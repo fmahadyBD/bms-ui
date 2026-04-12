@@ -1,0 +1,452 @@
+<!-- survey-management.component.html -->
+<div class="survey-container">
+  <div class="page-header">
+    <div class="header-title">
+      <span class="title-icon">📋</span>
+      <h1>Survey Management</h1>
+    </div>
+    <button class="btn-add" (click)="openAddModal()">
+      <span>➕</span> Create New Survey
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+    <p>Loading surveys...</p>
+  </div>
+
+  <!-- Surveys Grid -->
+  <div *ngIf="!loading && surveys.length > 0" class="surveys-grid">
+    <div class="survey-card" *ngFor="let survey of surveys">
+      <div class="survey-card-header">
+        <div class="survey-icon">📋</div>
+        <div class="survey-info">
+          <h3>{{ survey.title }}</h3>
+          <p class="survey-desc">{{ survey.description | slice:0:80 }}...</p>
+        </div>
+        <div class="status-badge" [class]="getStatusClass(survey.status)">
+          {{ survey.status }}
+        </div>
+      </div>
+
+      <div class="survey-card-body">
+        <div class="info-row">
+          <span class="info-label">📅 Period:</span>
+          <span class="info-value">{{ formatDate(survey.startDate) }} - {{ formatDate(survey.endDate) }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">🎓 Academic Year:</span>
+          <span class="info-value">{{ survey.academicYear }} ({{ survey.semester }})</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">❓ Questions:</span>
+          <span class="info-value">{{ survey.questions.length }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">🎯 Target Responses:</span>
+          <span class="info-value">{{ survey.targetResponses }}</span>
+        </div>
+      </div>
+
+      <div class="survey-card-footer">
+        <select class="status-select" [value]="survey.status" (change)="updateStatus(survey, $event)">
+          <option value="DRAFT">DRAFT</option>
+          <option value="PUBLISHED">PUBLISHED</option>
+          <option value="CLOSED">CLOSED</option>
+        </select>
+        <div class="action-buttons">
+          <button class="btn-submit" (click)="openSubmitResponse(survey)" title="Submit Response">📝</button>
+          <button class="btn-stats" (click)="viewStatistics(survey)" title="Statistics">📊</button>
+          <button class="btn-responses" (click)="viewResponses(survey)" title="View Responses">👥</button>
+          <button class="btn-export" (click)="exportSurvey(survey)" title="Export">📎</button>
+          <button class="btn-view" (click)="viewDetails(survey)" title="View Details">👁️</button>
+          <button class="btn-edit" (click)="editSurvey(survey)" title="Edit Survey">✏️</button>
+          <button class="btn-delete" (click)="confirmDelete(survey)" title="Delete Survey">🗑️</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && surveys.length === 0" class="empty-state">
+    <div class="empty-icon">📋</div>
+    <h3>No Surveys Found</h3>
+    <p>Click "Create New Survey" to get started.</p>
+  </div>
+</div>
+
+<!-- ===== ADD/EDIT SURVEY MODAL ===== -->
+<div class="modal-overlay" *ngIf="showAddModal || showEditModal" (click)="showAddModal ? closeAddModal() : closeEditModal()">
+  <div class="modal-container modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ showAddModal ? '➕ Create New Survey' : '✏️ Edit Survey' }}</h3>
+      <button class="modal-close" (click)="showAddModal ? closeAddModal() : closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- FIX: Renamed #surveyForm to #surveyNgForm to avoid conflict with the component property 'surveyForm' -->
+      <form #surveyNgForm="ngForm">
+        <!-- Basic Information -->
+        <div class="form-section">
+          <h4>Basic Information</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Survey Title *</label>
+              <input type="text" [(ngModel)]="surveyForm.title" name="title" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <textarea [(ngModel)]="surveyForm.description" name="description" class="form-control" rows="3"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Start Date *</label>
+              <input type="date" [(ngModel)]="surveyForm.startDate" name="startDate" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>End Date *</label>
+              <input type="date" [(ngModel)]="surveyForm.endDate" name="endDate" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Academic Year</label>
+              <select [(ngModel)]="surveyForm.academicYear" name="academicYear" class="form-control">
+                <option *ngFor="let year of academicYears" [value]="year">{{ year }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Semester</label>
+              <select [(ngModel)]="surveyForm.semester" name="semester" class="form-control">
+                <option *ngFor="let sem of semesters" [value]="sem">{{ sem }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Target Responses</label>
+              <input type="number" [(ngModel)]="surveyForm.targetResponses" name="targetResponses" class="form-control">
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select [(ngModel)]="surveyForm.status" name="status" class="form-control">
+                <option value="DRAFT">DRAFT</option>
+                <option value="PUBLISHED">PUBLISHED</option>
+                <option value="CLOSED">CLOSED</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Questions Section -->
+        <div class="form-section">
+          <h4>Questions</h4>
+          
+          <!-- Existing Questions List -->
+          <div class="questions-list" *ngIf="surveyForm.questions.length > 0">
+            <div class="question-item" *ngFor="let question of surveyForm.questions; let i = index">
+              <div class="question-header">
+                <span class="question-order">Q{{ question.displayOrder }}</span>
+                <div class="question-controls">
+                  <button type="button" class="btn-move-up" (click)="moveQuestionUp(i)" *ngIf="i > 0">⬆️</button>
+                  <button type="button" class="btn-move-down" (click)="moveQuestionDown(i)" *ngIf="i < surveyForm.questions.length - 1">⬇️</button>
+                  <button type="button" class="btn-remove" (click)="removeQuestion(i)">🗑️</button>
+                </div>
+              </div>
+              <div class="question-body">
+                <div class="question-text">{{ question.questionText }}</div>
+                <div class="question-meta">
+                  <span class="badge">{{ question.questionType }}</span>
+                  <span class="badge" [class.required]="question.required">Required: {{ question.required ? 'Yes' : 'No' }}</span>
+                </div>
+                <div class="question-options" *ngIf="question.options && question.options.length > 0">
+                  <small>Options:</small>
+                  <span class="option-tag" *ngFor="let opt of question.options">{{ opt }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add New Question Form -->
+          <div class="add-question-form">
+            <h5>Add New Question</h5>
+            <div class="form-group">
+              <label>Question Text</label>
+              <input type="text" [(ngModel)]="newQuestion.questionText" name="newQuestionText" class="form-control" placeholder="Enter your question">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Question Type</label>
+                <select [(ngModel)]="newQuestion.questionType" name="questionType" class="form-control">
+                  <option *ngFor="let type of questionTypes" [value]="type">{{ type }}</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Required</label>
+                <select [(ngModel)]="newQuestion.required" name="required" class="form-control">
+                  <option [value]="true">Yes</option>
+                  <option [value]="false">No</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Options for choice questions -->
+            <div class="form-group" *ngIf="newQuestion.questionType === 'SINGLE_CHOICE' || newQuestion.questionType === 'MULTIPLE_CHOICE' || newQuestion.questionType === 'DROPDOWN'">
+              <label>Options</label>
+              <div class="options-input">
+                <input type="text" [(ngModel)]="optionsInput" name="optionsInput" class="form-control" placeholder="Enter option and press Add">
+                <button type="button" class="btn-add-option" (click)="addOption()">Add</button>
+              </div>
+              <div class="options-list" *ngIf="newQuestion.options && newQuestion.options.length > 0">
+                <span class="option-badge" *ngFor="let opt of newQuestion.options; let idx = index">
+                  {{ opt }}
+                  <button type="button" class="remove-option" (click)="removeOption(idx)">✕</button>
+                </span>
+              </div>
+            </div>
+
+            <button type="button" class="btn-add-question" (click)="addQuestion()">➕ Add Question</button>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="showAddModal ? closeAddModal() : closeEditModal()">Cancel</button>
+          <button type="button" class="btn-save" [disabled]="actionLoading" (click)="validateAndSave()">
+            💾 {{ actionLoading ? 'Saving...' : (showAddModal ? 'Create Survey' : 'Update Survey') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DETAILS MODAL ===== -->
+<div class="modal-overlay" *ngIf="showDetailsModal" (click)="closeDetailsModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>📋 Survey Details</h3>
+      <button class="modal-close" (click)="closeDetailsModal()">✕</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedSurvey">
+      <div class="details-card">
+        <div class="detail-row"><label>Title:</label><span>{{ selectedSurvey.title }}</span></div>
+        <div class="detail-row"><label>Description:</label><span>{{ selectedSurvey.description }}</span></div>
+        <div class="detail-row"><label>Period:</label><span>{{ formatDate(selectedSurvey.startDate) }} - {{ formatDate(selectedSurvey.endDate) }}</span></div>
+        <div class="detail-row"><label>Academic Year:</label><span>{{ selectedSurvey.academicYear }} ({{ selectedSurvey.semester }})</span></div>
+        <div class="detail-row"><label>Status:</label><span class="status-badge" [class]="getStatusClass(selectedSurvey.status)">{{ selectedSurvey.status }}</span></div>
+        <div class="detail-row"><label>Target Responses:</label><span>{{ selectedSurvey.targetResponses }}</span></div>
+        <div class="detail-row"><label>Created:</label><span>{{ selectedSurvey.createdAt | date:'medium' }}</span></div>
+        <div class="detail-row"><label>Updated:</label><span>{{ selectedSurvey.updatedAt | date:'medium' }}</span></div>
+      </div>
+
+      <div class="questions-section">
+        <h4>Questions ({{ selectedSurvey.questions.length }})</h4>
+        <div class="question-list-detail">
+          <div class="question-detail-item" *ngFor="let q of selectedSurvey.questions">
+            <div class="question-header-detail">
+              <strong>Q{{ q.displayOrder }}.</strong> {{ q.questionText }}
+              <span class="question-type-badge">{{ q.questionType }}</span>
+              <span class="required-badge" [class.required]="q.required">{{ q.required ? 'Required' : 'Optional' }}</span>
+            </div>
+            <div class="question-options-detail" *ngIf="q.options && q.options.length > 0">
+              <small>Options: {{ q.options.join(', ') }}</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RESPONSES MODAL ===== -->
+<div class="modal-overlay" *ngIf="showResponsesModal" (click)="closeResponsesModal()">
+  <div class="modal-container modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>👥 Survey Responses - {{ selectedSurvey?.title }}</h3>
+      <button class="modal-close" (click)="closeResponsesModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="responses-table-container">
+        <table class="responses-table">
+          <thead>
+            <tr>
+              <th>Student ID</th>
+              <th>Name</th>
+              <th>Department</th>
+              <th>Boarding Point</th>
+              <th>Drop Point</th>
+              <th>Pickup Time</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let response of surveyResponses">
+              <td>{{ response.studentId }}</td>
+              <td>{{ response.studentName }}</td>
+              <td>{{ response.studentDepartment }}</td>
+              <td>{{ response.boardingPoint }}</td>
+              <td>{{ response.dropPoint }}</td>
+              <td>{{ response.pickupTime }}</td>
+              <td>
+                <select class="status-select-small" [value]="response.status" (change)="updateResponseStatus(response, $event)">
+                  <option *ngFor="let status of responseStatuses" [value]="status">{{ status }}</option>
+                </select>
+              </td>
+              <td>
+                <span class="status-badge-small" [class]="getResponseStatusClass(response.status)">
+                  {{ response.status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== STATISTICS MODAL ===== -->
+<div class="modal-overlay" *ngIf="showStatisticsModal" (click)="closeStatisticsModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>📊 Survey Statistics - {{ selectedSurvey?.title }}</h3>
+      <button class="modal-close" (click)="closeStatisticsModal()">✕</button>
+    </div>
+    <div class="modal-body" *ngIf="surveyStatistics">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">{{ surveyStatistics.totalResponses }}</div>
+          <div class="stat-label">Total Responses</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ surveyStatistics.confirmedResponses }}</div>
+          <div class="stat-label">Confirmed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ surveyStatistics.waitlistedResponses }}</div>
+          <div class="stat-label">Waitlisted</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ surveyStatistics.pendingResponses }}</div>
+          <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ surveyStatistics.rejectedResponses }}</div>
+          <div class="stat-label">Rejected</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ surveyStatistics.targetProgress }}%</div>
+          <div class="stat-label">Target Progress</div>
+        </div>
+      </div>
+
+      <div class="progress-bar-container">
+        <div class="progress-label">Target Progress: {{ surveyStatistics.targetProgress }}%</div>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="surveyStatistics.targetProgress"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SUBMIT RESPONSE MODAL ===== -->
+<div class="modal-overlay" *ngIf="showSubmitResponseModal" (click)="closeSubmitResponseModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>📝 Submit Response - {{ selectedSurvey?.title }}</h3>
+      <button class="modal-close" (click)="closeSubmitResponseModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <form>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Student ID *</label>
+            <input type="text" [(ngModel)]="studentResponse.studentId" name="studentId" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Student Name *</label>
+            <input type="text" [(ngModel)]="studentResponse.studentName" name="studentName" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Email *</label>
+            <input type="email" [(ngModel)]="studentResponse.studentEmail" name="studentEmail" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Phone *</label>
+            <input type="tel" [(ngModel)]="studentResponse.studentPhone" name="studentPhone" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Department *</label>
+            <input type="text" [(ngModel)]="studentResponse.studentDepartment" name="studentDepartment" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Semester *</label>
+            <input type="text" [(ngModel)]="studentResponse.studentSemester" name="studentSemester" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Boarding Point *</label>
+            <input type="text" [(ngModel)]="studentResponse.boardingPoint" name="boardingPoint" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Drop Point *</label>
+            <input type="text" [(ngModel)]="studentResponse.dropPoint" name="dropPoint" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Pickup Time *</label>
+          <input type="time" [(ngModel)]="studentResponse.pickupTime" name="pickupTime" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label>Additional Notes</label>
+          <textarea [(ngModel)]="studentResponse.additionalNotes" name="additionalNotes" class="form-control" rows="3"></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="closeSubmitResponseModal()">Cancel</button>
+          <button type="button" class="btn-save" [disabled]="actionLoading" (click)="submitStudentResponse()">
+            📤 {{ actionLoading ? 'Submitting...' : 'Submit Response' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DELETE MODAL ===== -->
+<div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
+  <div class="modal-container modal-small" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>⚠️ Confirm Delete</h3>
+      <button class="modal-close" (click)="closeDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to delete <strong>{{ selectedSurvey?.title }}</strong>?</p>
+      <p class="warning-text">This action cannot be undone!</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="closeDeleteModal()">Cancel</button>
+        <button class="btn-delete-confirm" [disabled]="actionLoading" (click)="deleteSurvey()">
+          🗑️ {{ actionLoading ? 'Deleting...' : 'Delete Permanently' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

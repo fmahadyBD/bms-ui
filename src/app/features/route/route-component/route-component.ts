@@ -1,4 +1,3 @@
-// route-component.ts (updated)
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -28,6 +27,11 @@ export class RouteComponent implements OnInit {
     operatingDays: [],
     pickupPoints: []
   };
+
+  // Getter to maintain compatibility with HTML using 'routeForm'
+  get routeForm() {
+    return this.routeFormData;
+  }
 
   operatingDaysOptions = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
   statusOptions = ['ACTIVE', 'INACTIVE'];
@@ -98,13 +102,6 @@ export class RouteComponent implements OnInit {
 
   addPickupPoint() {
     if (this.newPickupPoint.placeName && this.newPickupPoint.pickupTime) {
-      // Validate pickup time format
-      const timePattern = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-      if (!timePattern.test(this.newPickupPoint.pickupTime)) {
-        this.showError('Pickup time must be in format HH:MM');
-        return;
-      }
-      
       this.newPickupPoint.stopOrder = this.routeFormData.pickupPoints.length + 1;
       this.routeFormData.pickupPoints.push({ ...this.newPickupPoint });
       this.newPickupPoint = {
@@ -123,66 +120,17 @@ export class RouteComponent implements OnInit {
     this.routeFormData.pickupPoints.forEach((point, idx) => point.stopOrder = idx + 1);
   }
 
-  // Validate bus number format
-  isValidBusNumber(busNo: string): boolean {
-    const pattern = /^BUS-\d{3}$/;
-    return pattern.test(busNo);
-  }
-
-  // Validate all fields before saving
-  validateForm(): boolean {
-    // Check bus number
-    if (!this.routeFormData.busNo) {
-      this.showError('Bus number is required');
-      return false;
-    }
-    if (!this.isValidBusNumber(this.routeFormData.busNo)) {
-      this.showError('Bus number must follow format: BUS-001, BUS-002, etc.');
-      return false;
-    }
-
-    // Check route name
-    if (!this.routeFormData.routeName) {
-      this.showError('Route name is required');
-      return false;
-    }
-    if (this.routeFormData.routeName.length < 3) {
-      this.showError('Route name must be at least 3 characters');
-      return false;
-    }
-
-    // Check route line
-    if (!this.routeFormData.routeLine) {
-      this.showError('Route line is required');
-      return false;
-    }
-    if (this.routeFormData.routeLine.length < 5) {
-      this.showError('Route line must be at least 5 characters');
-      return false;
-    }
-
-    // Check operating days
-    if (this.routeFormData.operatingDays.length === 0) {
-      this.showError('Please select at least one operating day');
-      return false;
-    }
-
-    // Check pickup points
-    if (this.routeFormData.pickupPoints.length === 0) {
-      this.showError('At least one pickup point is required');
-      return false;
-    }
-
-    return true;
-  }
-
-  saveRouteWithValidation() {
-    this.submitted = true;
-    
-    if (!this.validateForm()) {
+  // This is the original save method
+  saveRoute() {
+    if (!this.routeFormData.busNo || !this.routeFormData.routeName) {
+      this.showError('Please fill in all required fields');
       return;
     }
-
+    if (this.routeFormData.operatingDays.length === 0) {
+      this.showError('Please select at least one operating day');
+      return;
+    }
+    
     this.actionLoading = true;
     this.routeService.createRoute(this.routeFormData).subscribe({
       next: () => {
@@ -192,21 +140,15 @@ export class RouteComponent implements OnInit {
         this.actionLoading = false;
       },
       error: (error) => {
-        let errorMessage = 'Failed to add route';
-        if (error.error?.message) {
-          errorMessage = error.error.message;
-        } else if (error.error?.errors) {
-          errorMessage = error.error.errors.map((e: any) => e.message).join(', ');
-        }
-        this.showError(errorMessage);
+        this.showError('Failed to add route: ' + (error.error?.message || error.message));
         this.actionLoading = false;
       }
     });
   }
 
-  // Original save method (keep for compatibility)
-  saveRoute() {
-    this.saveRouteWithValidation();
+  // ADD THIS METHOD - This is called by the validation form
+  saveRouteWithValidation() {
+    this.saveRoute();
   }
 
   viewDetails(route: RouteResponse) {
@@ -234,7 +176,6 @@ export class RouteComponent implements OnInit {
       }))
     };
     this.newPickupPoint = { placeName: '', placeDetails: '', pickupTime: '', stopOrder: 1 };
-    this.submitted = false;
     this.showEditModal = true;
   }
 
@@ -242,13 +183,12 @@ export class RouteComponent implements OnInit {
     this.showEditModal = false;
     this.selectedRoute = null;
     this.actionLoading = false;
-    this.submitted = false;
   }
 
-  updateRouteWithValidation() {
+  updateRoute() {
     if (!this.selectedRoute) return;
-    
-    if (!this.validateForm()) {
+    if (this.routeFormData.operatingDays.length === 0) {
+      this.showError('Please select at least one operating day');
       return;
     }
     
@@ -261,18 +201,10 @@ export class RouteComponent implements OnInit {
         this.actionLoading = false;
       },
       error: (error) => {
-        let errorMessage = 'Failed to update route';
-        if (error.error?.message) {
-          errorMessage = error.error.message;
-        }
-        this.showError(errorMessage);
+        this.showError('Failed to update route: ' + (error.error?.message || error.message));
         this.actionLoading = false;
       }
     });
-  }
-
-  updateRoute() {
-    this.updateRouteWithValidation();
   }
 
   updateStatus(route: RouteResponse, event: Event) {

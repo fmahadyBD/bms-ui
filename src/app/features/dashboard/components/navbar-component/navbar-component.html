@@ -22,6 +22,7 @@
       <a class="nav-link" (click)="navigateToRoutes()">Routes</a>
       <a class="nav-link" (click)="navigateToBuses()">Buses</a>
       <a class="nav-link" (click)="navigateToBusSlots()">Bus Slots</a>
+      <a class="nav-link" (click)="navigateToSurveys()">Surveys</a>
       <a class="nav-link" (click)="navigateToReports()">Reports</a>
     </div>
 
@@ -29,7 +30,7 @@
     <div class="profile-section">
       <div class="profile-btn" (click)="toggleProfileDropdown($event)">
         <div class="avatar">
-          {{ (userName | slice: 0 : 2).toUpperCase() }}
+          {{ (userName | slice:0:2).toUpperCase() }}
         </div>
         <div class="profile-info">
           <span class="profile-name">{{ userName }}</span>
@@ -41,7 +42,7 @@
       <div class="profile-dropdown" *ngIf="showProfileDropdown">
         <div class="dropdown-header">
           <div class="dropdown-avatar">
-            {{ (userName | slice: 0 : 2).toUpperCase() }}
+            {{ (userName | slice:0:2).toUpperCase() }}
           </div>
           <h4>{{ userName }}</h4>
           <p>{{ userEmail }}</p>
