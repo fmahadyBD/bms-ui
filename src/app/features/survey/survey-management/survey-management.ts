@@ -1,4 +1,3 @@
-// src/app/features/survey/survey-management/survey-management.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -8,8 +7,8 @@ import { SurveyService, SurveyResponse, SurveyRequest, StudentResponse, SurveySt
   selector: 'app-survey-management',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './survey-management.component.html',
-  styleUrls: ['./survey-management.component.css']
+  templateUrl: './survey-management.html',
+  styleUrls: ['./survey-management.css']
 })
 export class SurveyManagementComponent implements OnInit {
   surveys: SurveyResponse[] = [];
@@ -76,6 +75,37 @@ export class SurveyManagementComponent implements OnInit {
 
   ngOnInit() {
     this.loadSurveys();
+  }
+
+  // Helper methods for type-safe template handling
+  getOptionsArray(options: string | string[] | null | undefined): string[] {
+    if (!options) {
+      return [];
+    }
+    
+    if (Array.isArray(options)) {
+      return options;
+    }
+    
+    // If it's a string, try to parse it as JSON
+    if (typeof options === 'string') {
+      try {
+        const parsed = JSON.parse(options);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      } catch (e) {
+        // If parsing fails, treat as single option
+        return options ? [options] : [];
+      }
+    }
+    
+    return [];
+  }
+
+  getOptionsString(options: string | string[] | null | undefined): string {
+    const optionsArray = this.getOptionsArray(options);
+    return optionsArray.join(', ');
   }
 
   loadSurveys() {

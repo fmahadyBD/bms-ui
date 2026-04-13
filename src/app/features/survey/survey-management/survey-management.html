@@ -164,9 +164,10 @@
                   <span class="badge">{{ question.questionType }}</span>
                   <span class="badge" [class.required]="question.required">Required: {{ question.required ? 'Yes' : 'No' }}</span>
                 </div>
-                <div class="question-options" *ngIf="question.options && question.options.length > 0">
+                <!-- FIXED: Using helper method for options display -->
+                <div class="question-options" *ngIf="getOptionsArray(question.options).length > 0">
                   <small>Options:</small>
-                  <span class="option-tag" *ngFor="let opt of question.options">{{ opt }}</span>
+                  <span class="option-tag" *ngFor="let opt of getOptionsArray(question.options)">{{ opt }}</span>
                 </div>
               </div>
             </div>
@@ -254,8 +255,9 @@
               <span class="question-type-badge">{{ q.questionType }}</span>
               <span class="required-badge" [class.required]="q.required">{{ q.required ? 'Required' : 'Optional' }}</span>
             </div>
-            <div class="question-options-detail" *ngIf="q.options && q.options.length > 0">
-              <small>Options: {{ q.options.join(', ') }}</small>
+            <!-- FIXED: Using helper method for options display -->
+            <div class="question-options-detail" *ngIf="getOptionsArray(q.options).length > 0">
+              <small>Options: {{ getOptionsString(q.options) }}</small>
             </div>
           </div>
         </div>
