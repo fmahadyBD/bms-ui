@@ -1,0 +1,90 @@
+<nav class="navbar">
+  <div class="navbar-container">
+    <div class="navbar-brand">
+      <a routerLink="/student-dashboard" class="brand-link">
+        <i class="logo-icon">🚌</i>
+        <span class="brand-text">Student Transport</span>
+      </a>
+    </div>
+
+    <div class="navbar-menu">
+      <a routerLink="/student-dashboard" 
+         routerLinkActive="active" 
+         [routerLinkActiveOptions]="{exact: true}"
+         class="nav-link">
+        <i class="nav-icon">📊</i>
+        <span>Dashboard</span>
+      </a>
+
+      <a routerLink="/student-dashboard/new-bus-request" 
+         routerLinkActive="active" 
+         class="nav-link">
+        <i class="nav-icon">🚌</i>
+        <span>New Bus Request</span>
+      </a>
+
+      <a routerLink="/student-dashboard/survey" 
+         routerLinkActive="active" 
+         class="nav-link">
+        <i class="nav-icon">📋</i>
+        <span>Survey</span>
+      </a>
+
+      <a routerLink="/student-dashboard/my-route" 
+         routerLinkActive="active" 
+         class="nav-link">
+        <i class="nav-icon">🗺️</i>
+        <span>My Route</span>
+      </a>
+
+      <!-- Profile Dropdown -->
+      <div class="profile-dropdown" 
+           (mouseenter)="isProfileDropdownOpen = true" 
+           (mouseleave)="closeProfileDropdown()">
+        <button class="profile-btn" (click)="toggleProfileDropdown()">
+          <div class="profile-avatar">
+            <span>{{ studentName.charAt(0).toUpperCase() }}</span>
+          </div>
+          <span class="profile-name">{{ studentName }}</span>
+          <i class="dropdown-icon" [class.rotate]="isProfileDropdownOpen">▼</i>
+        </button>
+
+        <div class="dropdown-menu" *ngIf="isProfileDropdownOpen">
+          <div class="dropdown-header">
+            <div class="dropdown-avatar">
+              {{ studentName.charAt(0).toUpperCase() }}
+            </div>
+            <div class="dropdown-info">
+              <div class="dropdown-name">{{ studentName }}</div>
+              <div class="dropdown-email">{{ studentEmail }}</div>
+            </div>
+          </div>
+          
+          <div class="dropdown-divider"></div>
+          
+          <a (click)="navigateTo('profile')" class="dropdown-item">
+            <i class="dropdown-icon-item">👤</i>
+            <span>Profile</span>
+          </a>
+          
+          <a (click)="navigateTo('settings')" class="dropdown-item">
+            <i class="dropdown-icon-item">⚙️</i>
+            <span>Settings</span>
+          </a>
+          
+          <a (click)="navigateTo('change-password')" class="dropdown-item">
+            <i class="dropdown-icon-item">🔒</i>
+            <span>Change Password</span>
+          </a>
+          
+          <div class="dropdown-divider"></div>
+          
+          <a (click)="logout()" class="dropdown-item logout-item">
+            <i class="dropdown-icon-item">🚪</i>
+            <span>Logout</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>

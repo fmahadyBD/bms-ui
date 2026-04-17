@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
-import { roleGuard } from './guards/role.guard';
 import { loggedInGuard } from './guards/logged-in.guard';
+import { roleGuard } from './guards/role.guard';
 
 export const routes: Routes = [
   {
@@ -11,8 +11,39 @@ export const routes: Routes = [
   },
   {
     path: 'student-dashboard',
-    loadComponent: () => import('./features/dashboard/pages/student-dashboard/student-dashboard').then(m => m.StudentDashboardComponent),
-    canActivate: [authGuard]
+    loadComponent: () => import('./features/student/student-dashboard/student-dashboard').then(m => m.StudentDashboardComponent),
+    canActivate: [authGuard],
+    children: [
+      { path: '', redirectTo: 'overview', pathMatch: 'full' },  // Make sure this line is NOT commented
+      { 
+        path: 'overview', 
+        loadComponent: () => import('./features/student/overview-component.ts/overview-component.ts').then(m => m.OverviewComponent)
+      },
+      { 
+        path: 'new-bus-request', 
+        loadComponent: () => import('./features/student/new-bus-request.ts/new-bus-request.ts').then(m => m.NewBusRequestComponent)
+      },
+      { 
+        path: 'change-password', 
+        loadComponent: () => import('./features/dashboard/components/change-password/change-password').then(m => m.ChangePasswordComponent)
+      },
+      { 
+        path: 'survey', 
+        loadComponent: () => import('./features/student/survey-component/survey-component').then(m => m.SurveyComponent)
+      },
+      { 
+        path: 'profile', 
+        loadComponent: () => import('./features/student/profile-component/profile-component').then(m => m.ProfileComponent)
+      },
+      { 
+        path: 'settings', 
+        loadComponent: () => import('./features/student/settings-component/settings-component').then(m => m.SettingsComponent)
+      },
+      { 
+        path: 'my-route', 
+        loadComponent: () => import('./features/student/my-route-component/my-route-component').then(m => m.MyRouteComponent)
+      }
+    ]
   },
   {
     path: 'manager-dashboard',

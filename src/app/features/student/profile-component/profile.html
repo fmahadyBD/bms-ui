@@ -1,0 +1,80 @@
+
+<div class="profile-container">
+  <div class="profile-card">
+    <div class="profile-header">
+      <div class="profile-avatar-large">
+        {{ studentData.name?.charAt(0) || 'S' }}
+      </div>
+      <h1>My Profile</h1>
+      <p>View and manage your personal information</p>
+    </div>
+    
+    <div class="profile-body">
+      <div *ngIf="successMessage" class="alert alert-success">
+        {{ successMessage }}
+      </div>
+      
+      <div *ngIf="errorMessage" class="alert alert-error">
+        {{ errorMessage }}
+      </div>
+      
+      <div *ngIf="loading" class="loading-state">
+        <div class="spinner"></div>
+      </div>
+      
+      <div *ngIf="!loading" class="profile-info">
+        <div class="info-group">
+          <label>Student ID</label>
+          <p>{{ studentData.studentId }}</p>
+        </div>
+        
+        <div class="info-group">
+          <label>Full Name</label>
+          <p *ngIf="!isEditing">{{ studentData.name }}</p>
+          <input *ngIf="isEditing" type="text" [(ngModel)]="studentData.name" class="form-control">
+        </div>
+        
+        <div class="info-group">
+          <label>Email Address</label>
+          <p *ngIf="!isEditing">{{ studentData.email }}</p>
+          <input *ngIf="isEditing" type="email" [(ngModel)]="studentData.email" class="form-control">
+        </div>
+        
+        <div class="info-group">
+          <label>Phone Number</label>
+          <p *ngIf="!isEditing">{{ studentData.phoneNumber || 'Not provided' }}</p>
+          <input *ngIf="isEditing" type="tel" [(ngModel)]="studentData.phoneNumber" class="form-control">
+        </div>
+        
+        <div class="info-group">
+          <label>Department</label>
+          <p *ngIf="!isEditing">{{ studentData.department || 'Not provided' }}</p>
+          <input *ngIf="isEditing" type="text" [(ngModel)]="studentData.department" class="form-control">
+        </div>
+        
+        <div class="info-group">
+          <label>Batch</label>
+          <p *ngIf="!isEditing">{{ studentData.batch || 'Not provided' }}</p>
+          <input *ngIf="isEditing" type="text" [(ngModel)]="studentData.batch" class="form-control">
+        </div>
+        
+        <div class="info-group">
+          <label>Assigned Route</label>
+          <p>{{ studentData.routeName || 'Not assigned' }}</p>
+        </div>
+        
+        <div class="profile-actions">
+          <button *ngIf="!isEditing" class="btn-primary" (click)="toggleEdit()">
+            Edit Profile
+          </button>
+          <button *ngIf="isEditing" class="btn-primary" (click)="updateProfile()">
+            Save Changes
+          </button>
+          <button *ngIf="isEditing" class="btn-secondary" (click)="toggleEdit()">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

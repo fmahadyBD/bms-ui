@@ -1,0 +1,64 @@
+
+
+<div class="route-container">
+  <div class="route-card">
+    <div class="route-header">
+      <h1>🗺️ My Route</h1>
+      <p>View your assigned bus route details</p>
+    </div>
+    
+    <div class="route-body">
+      <div *ngIf="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading route information...</p>
+      </div>
+      
+      <div *ngIf="!loading && !studentData?.routeName" class="empty-state">
+        <div class="empty-icon">🚫</div>
+        <h3>No Route Assigned</h3>
+        <p>You haven't been assigned a bus route yet. Please contact the transport office.</p>
+      </div>
+      
+      <div *ngIf="!loading && studentData?.routeName">
+        <div class="route-info">
+          <div class="info-card">
+            <h3>Route Information</h3>
+            <div class="info-item">
+              <span class="label">Route Name:</span>
+              <span class="value">{{ studentData.routeName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Route ID:</span>
+              <span class="value">{{ studentData.routeId || 'N/A' }}</span>
+            </div>
+          </div>
+          
+          <div class="stops-card">
+            <h3>Route Stops & Schedule</h3>
+            <div class="timeline">
+              <div *ngFor="let stop of getRouteStops()" class="timeline-item">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                  <div class="stop-name">{{ stop.name }}</div>
+                  <div class="stop-time">{{ stop.time }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="additional-info">
+            <div class="info-card">
+              <h3>Important Notes</h3>
+              <ul>
+                <li>Please arrive at your pickup point 5-10 minutes before the scheduled time</li>
+                <li>Contact driver if bus is delayed by more than 10 minutes</li>
+                <li>Keep your student ID ready for verification</li>
+                <li>For route changes or issues, contact the transport office</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

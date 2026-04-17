@@ -1,0 +1,89 @@
+<div class="overview-container">
+  <!-- Welcome Section -->
+  <div class="welcome-section">
+    <h1>Welcome back, {{ studentData?.name || 'Student' }}!</h1>
+    <p>Here's what's happening with your transport services today.</p>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="stats-grid" *ngIf="studentData">
+    <div class="stat-card">
+      <div class="stat-icon">🚌</div>
+      <div class="stat-info">
+        <h3>{{ getStatistics().totalRequests }}</h3>
+        <p>Total Requests</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-info">
+        <h3>{{ getStatistics().activeRequests }}</h3>
+        <p>Active Requests</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">📝</div>
+      <div class="stat-info">
+        <h3>{{ getStatistics().completedSurveys }}</h3>
+        <p>Completed Surveys</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">🗺️</div>
+      <div class="stat-info">
+        <h3>{{ getStatistics().routeAssigned }}</h3>
+        <p>Assigned Route</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="main-grid">
+    <!-- Routines Section -->
+    <div class="card routines-card">
+      <div class="card-header">
+        <h2>📅 Class Routine</h2>
+        <button class="refresh-btn" (click)="refreshRoutines()">Refresh</button>
+      </div>
+      <div class="card-body">
+        <div *ngIf="loading" class="loading">
+          <div class="spinner"></div>
+          <p>Loading routines...</p>
+        </div>
+        <div *ngIf="!loading && routines.length === 0" class="empty-state">
+          <p>No routines found for your schedule.</p>
+        </div>
+        <div *ngIf="!loading && routines.length > 0" class="routines-list">
+          <div *ngFor="let routine of routines" class="routine-item">
+            <div class="routine-day">{{ routine.dayOfWeek }}</div>
+            <div class="routine-details">
+              <div class="routine-subject">{{ routine.subject }}</div>
+              <div class="routine-time">
+                {{ routine.startTime | date:'shortTime' }} - {{ routine.endTime | date:'shortTime' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="card activities-card">
+      <div class="card-header">
+        <h2>📋 Recent Activities</h2>
+      </div>
+      <div class="card-body">
+        <div *ngFor="let activity of recentActivities" class="activity-item">
+          <div class="activity-date">{{ activity.date | date:'MMM d, y' }}</div>
+          <div class="activity-action">{{ activity.action }}</div>
+          <div class="activity-status" [class]="activity.status.toLowerCase()">
+            {{ activity.status }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

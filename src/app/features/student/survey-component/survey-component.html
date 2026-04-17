@@ -1,0 +1,142 @@
+<!-- <app-navbar></app-navbar> -->
+
+<div class="survey-container">
+  <div class="survey-header">
+    <h1>📋 Surveys</h1>
+    <p>Participate in ongoing surveys to help us improve our services</p>
+  </div>
+  
+  <div *ngIf="errorMessage" class="alert alert-error">
+    {{ errorMessage }}
+  </div>
+  
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading surveys...</p>
+  </div>
+  
+  <div *ngIf="!loading && surveys.length === 0" class="empty-state">
+    <div class="empty-icon">📭</div>
+    <h3>No Active Surveys</h3>
+    <p>There are no active surveys available at the moment. Please check back later.</p>
+  </div>
+  
+  <div *ngIf="!loading && surveys.length > 0 && !showSurveyForm" class="surveys-grid">
+    <div *ngFor="let survey of surveys" class="survey-card">
+      <div class="survey-card-header">
+        <h3>{{ survey.title }}</h3>
+        <span class="survey-status" [class]="survey.status.toLowerCase()">
+          {{ survey.status }}
+        </span>
+      </div>
+      <div class="survey-card-body">
+        <p>{{ survey.description }}</p>
+        <div class="survey-meta">
+          <div class="meta-item">
+            <span class="meta-label">Academic Year:</span>
+            <span>{{ survey.academicYear }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Semester:</span>
+            <span>{{ survey.semester }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Questions:</span>
+            <span>{{ survey.questions.length }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Deadline:</span>
+            <span>{{ survey.endDate | date:'MMM d, y' }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="survey-card-footer">
+        <button class="btn-primary" (click)="takeSurvey(survey)">Take Survey</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Survey Form Modal -->
+  <div *ngIf="showSurveyForm && selectedSurvey" class="modal-overlay" (click)="closeSurvey()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ selectedSurvey.title }}</h2>
+        <button class="close-btn" (click)="closeSurvey()">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="survey-description">{{ selectedSurvey.description }}</p>
+        
+        <form (ngSubmit)="submitSurvey()">
+          <div *ngFor="let question of selectedSurvey.questions; let i = index" class="question-item">
+            <label class="question-label">
+              {{ question.questionText }}
+              <span *ngIf="question.required" class="required-star">*</span>
+            </label>
+            
+            <div [ngSwitch]="question.questionType">
+              <!-- Text Input -->
+              <input *ngSwitchCase="'TEXT'" 
+                     type="text" 
+                     [(ngModel)]="responses[i]" 
+                     [name]="'question_' + i"
+                     class="form-control"
+                     [required]="question.required">
+              
+              <!-- Textarea -->
+              <textarea *ngSwitchCase="'TEXTAREA'" 
+                        [(ngModel)]="responses[i]" 
+                        [name]="'question_' + i"
+                        class="form-control"
+                        rows="3"
+                        [required]="question.required"></textarea>
+              
+              <!-- Radio Buttons -->
+              <div *ngSwitchCase="'RADIO'" class="radio-group">
+                <label *ngFor="let option of parseOptions(question.options)" class="radio-label">
+                  <input type="radio" 
+                         [(ngModel)]="responses[i]" 
+                         [name]="'question_' + i"
+                         [value]="option"
+                         [required]="question.required">
+                  {{ option }}
+                </label>
+              </div>
+              
+              <!-- Checkboxes -->
+              <div *ngSwitchCase="'CHECKBOX'" class="checkbox-group">
+                <label *ngFor="let option of parseOptions(question.options)" class="checkbox-label">
+                  <input type="checkbox" 
+                         [value]="option"
+                         (change)="updateCheckboxResponse(i, option, $event)"
+                         [required]="question.required">
+                  {{ option }}
+                </label>
+              </div>
+              
+              <!-- Select Dropdown -->
+              <select *ngSwitchCase="'SELECT'" 
+                      [(ngModel)]="responses[i]" 
+                      [name]="'question_' + i"
+                      class="form-control"
+                      [required]="question.required">
+                <option value="">Select an option</option>
+                <option *ngFor="let option of parseOptions(question.options)" [value]="option">
+                  {{ option }}
+                </option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" (click)="closeSurvey()">Cancel</button>
+            <button type="submit" class="btn-primary" [disabled]="submitting">
+              <span *ngIf="submitting" class="spinner-small"></span>
+              <span *ngIf="!submitting">Submit Survey</span>
+              <span *ngIf="submitting">Submitting...</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
