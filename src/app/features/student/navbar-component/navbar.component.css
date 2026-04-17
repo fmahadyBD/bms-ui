@@ -3,7 +3,7 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 9999;
 }
 
 .navbar-container {
@@ -26,18 +26,13 @@
   align-items: center;
   text-decoration: none;
   color: white;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: bold;
-  gap: 10px;
   transition: transform 0.3s ease;
 }
 
 .brand-link:hover {
   transform: scale(1.05);
-}
-
-.logo-icon {
-  font-size: 2rem;
 }
 
 .brand-text {
@@ -56,13 +51,13 @@
 .nav-link {
   display: flex;
   align-items: center;
-  gap: 8px;
   padding: 8px 16px;
   color: white;
   text-decoration: none;
   border-radius: 8px;
   transition: all 0.3s ease;
   font-weight: 500;
+  cursor: pointer;
 }
 
 .nav-link:hover {
@@ -75,13 +70,10 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.nav-icon {
-  font-size: 1.2rem;
-}
-
 /* Profile Dropdown */
 .profile-dropdown {
   position: relative;
+  display: inline-block;
 }
 
 .profile-btn {
@@ -95,6 +87,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   color: white;
+  font-size: 14px;
 }
 
 .profile-btn:hover {
@@ -120,6 +113,7 @@
 .dropdown-icon {
   font-size: 0.8rem;
   transition: transform 0.3s ease;
+  display: inline-block;
 }
 
 .dropdown-icon.rotate {
@@ -128,15 +122,15 @@
 
 .dropdown-menu {
   position: absolute;
-  top: 60px;
+  top: 50px;
   right: 0;
   width: 280px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   overflow: hidden;
-  animation: slideDown 0.3s ease;
-  z-index: 1000;
+  z-index: 10000;
+  display: block !important;
 }
 
 @keyframes slideDown {
@@ -148,6 +142,10 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.dropdown-menu {
+  animation: slideDown 0.3s ease;
 }
 
 .dropdown-header {
@@ -184,6 +182,7 @@
 .dropdown-email {
   font-size: 0.85rem;
   opacity: 0.9;
+  word-break: break-all;
 }
 
 .dropdown-divider {
@@ -195,12 +194,16 @@
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 12px;
   padding: 12px 20px;
   color: #333;
   text-decoration: none;
   transition: all 0.2s ease;
   cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-size: 0.95rem;
 }
 
 .dropdown-item:hover {
@@ -216,11 +219,6 @@
   background: #fee;
 }
 
-.dropdown-icon-item {
-  font-size: 1.1rem;
-  width: 20px;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
   .navbar-container {
@@ -228,19 +226,15 @@
   }
 
   .brand-text {
-    display: none;
+    font-size: 1rem;
   }
 
   .nav-link span {
-    display: none;
+    font-size: 0.9rem;
   }
 
   .nav-link {
     padding: 8px 12px;
-  }
-
-  .nav-icon {
-    font-size: 1.3rem;
   }
 
   .profile-name {
@@ -260,5 +254,13 @@
 
   .nav-link {
     padding: 6px 10px;
+  }
+  
+  .nav-link span {
+    font-size: 0.8rem;
+  }
+  
+  .brand-text {
+    font-size: 0.9rem;
   }
 }

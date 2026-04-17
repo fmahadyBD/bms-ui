@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../auth/services/auth';
 
 @Component({
@@ -11,6 +11,8 @@ import { AuthService } from '../../auth/services/auth';
   styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent implements OnInit {
+  @ViewChild('dropdown') dropdownElement!: ElementRef;
+  
   isProfileDropdownOpen = false;
   studentName: string = '';
   studentEmail: string = '';
@@ -22,40 +24,53 @@ export class NavbarComponent implements OnInit {
 
   ngOnInit() {
     this.loadStudentInfo();
+    console.log('Navbar initialized'); // Debug log
   }
 
   loadStudentInfo() {
     this.studentName = localStorage.getItem('user_name') || 'Student';
     this.studentEmail = localStorage.getItem('user_email') || '';
+    console.log('Student info loaded:', this.studentName, this.studentEmail); // Debug log
   }
 
-  toggleProfileDropdown() {
+  toggleDropdown(event: Event) {
+    event.stopPropagation();
     this.isProfileDropdownOpen = !this.isProfileDropdownOpen;
+    console.log('Dropdown toggled:', this.isProfileDropdownOpen); // Debug log
   }
 
-  closeProfileDropdown() {
-    setTimeout(() => {
-      this.isProfileDropdownOpen = false;
-    }, 200);
+  closeDropdown() {
+    this.isProfileDropdownOpen = false;
+    console.log('Dropdown closed'); // Debug log
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event) {
+    if (this.dropdownElement && !this.dropdownElement.nativeElement.contains(event.target)) {
+      this.closeDropdown();
+    }
   }
 
   logout() {
+    console.log('Logout clicked'); // Debug log
     this.authService.logout().subscribe({
       next: () => {
         localStorage.clear();
         this.router.navigate(['/login']);
+        this.closeDropdown();
       },
       error: (error) => {
         console.error('Logout error:', error);
         localStorage.clear();
         this.router.navigate(['/login']);
+        this.closeDropdown();
       }
     });
   }
 
   navigateTo(route: string) {
-    // Fix: Use student-dashboard instead of student
+    console.log('Navigating to:', route); // Debug log
     this.router.navigate([`/student-dashboard/${route}`]);
-    this.closeProfileDropdown();
+    this.closeDropdown();
   }
 }
