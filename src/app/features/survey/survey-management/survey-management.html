@@ -10,6 +10,11 @@
     </button>
   </div>
 
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="error-message">
+    ⚠️ {{ errorMessage }}
+  </div>
+
   <!-- Loading State -->
   <div *ngIf="loading" class="loading-spinner">
     <div class="spinner"></div>
@@ -23,7 +28,7 @@
         <div class="survey-icon">📋</div>
         <div class="survey-info">
           <h3>{{ survey.title }}</h3>
-          <p class="survey-desc">{{ survey.description | slice:0:80 }}...</p>
+          <p class="survey-desc">{{ (survey.description || '').slice(0,80) }}{{ (survey.description || '').length > 80 ? '...' : '' }}</p>
         </div>
         <div class="status-badge" [class]="getStatusClass(survey.status)">
           {{ survey.status }}
@@ -41,7 +46,7 @@
         </div>
         <div class="info-row">
           <span class="info-label">❓ Questions:</span>
-          <span class="info-value">{{ survey.questions.length }}</span>
+          <span class="info-value">{{ (survey.questions || []).length }}</span>
         </div>
         <div class="info-row">
           <span class="info-label">🎯 Target Responses:</span>
@@ -84,16 +89,14 @@
       <button class="modal-close" (click)="showAddModal ? closeAddModal() : closeEditModal()">✕</button>
     </div>
     <div class="modal-body">
-      <!-- FIX: Renamed #surveyForm to #surveyNgForm to avoid conflict with the component property 'surveyForm' -->
       <form #surveyNgForm="ngForm">
         <!-- Basic Information -->
         <div class="form-section">
           <h4>Basic Information</h4>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Survey Title *</label>
-              <input type="text" [(ngModel)]="surveyForm.title" name="title" class="form-control" required>
-            </div>
+          
+          <div class="form-group">
+            <label>Survey Title *</label>
+            <input type="text" [(ngModel)]="surveyForm.title" name="title" class="form-control" required>
           </div>
 
           <div class="form-group">
@@ -145,29 +148,35 @@
 
         <!-- Questions Section -->
         <div class="form-section">
-          <h4>Questions</h4>
+          <h4>Questions ({{ surveyForm.questions.length }})</h4>
           
           <!-- Existing Questions List -->
           <div class="questions-list" *ngIf="surveyForm.questions.length > 0">
             <div class="question-item" *ngFor="let question of surveyForm.questions; let i = index">
               <div class="question-header">
-                <span class="question-order">Q{{ question.displayOrder }}</span>
+                <span class="question-order">Q{{ question.displayOrder || (i+1) }}</span>
                 <div class="question-controls">
-                  <button type="button" class="btn-move-up" (click)="moveQuestionUp(i)" *ngIf="i > 0">⬆️</button>
-                  <button type="button" class="btn-move-down" (click)="moveQuestionDown(i)" *ngIf="i < surveyForm.questions.length - 1">⬇️</button>
-                  <button type="button" class="btn-remove" (click)="removeQuestion(i)">🗑️</button>
+                  <button type="button" class="btn-move-up" (click)="moveQuestionUp(i)" *ngIf="i > 0" title="Move Up">⬆️</button>
+                  <button type="button" class="btn-move-down" (click)="moveQuestionDown(i)" *ngIf="i < surveyForm.questions.length - 1" title="Move Down">⬇️</button>
+                  <button type="button" class="btn-remove" (click)="removeQuestion(i)" title="Remove">🗑️</button>
                 </div>
               </div>
               <div class="question-body">
                 <div class="question-text">{{ question.questionText }}</div>
                 <div class="question-meta">
-                  <span class="badge">{{ question.questionType }}</span>
-                  <span class="badge" [class.required]="question.required">Required: {{ question.required ? 'Yes' : 'No' }}</span>
+                  <span class="badge badge-type">{{ question.questionType }}</span>
+                  <span class="badge" [class.badge-required]="question.required">
+                    {{ question.required ? 'Required' : 'Optional' }}
+                  </span>
                 </div>
-                <!-- FIXED: Using helper method for options display -->
+                <!-- Show options properly -->
                 <div class="question-options" *ngIf="getOptionsArray(question.options).length > 0">
-                  <small>Options:</small>
-                  <span class="option-tag" *ngFor="let opt of getOptionsArray(question.options)">{{ opt }}</span>
+                  <span class="options-label">Options:</span>
+                  <div class="options-tags">
+                    <span class="option-tag" *ngFor="let opt of getOptionsArray(question.options)">
+                      {{ opt }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -175,7 +184,7 @@
 
           <!-- Add New Question Form -->
           <div class="add-question-form">
-            <h5>Add New Question</h5>
+            <h5>➕ Add New Question</h5>
             <div class="form-group">
               <label>Question Text</label>
               <input type="text" [(ngModel)]="newQuestion.questionText" name="newQuestionText" class="form-control" placeholder="Enter your question">
@@ -185,7 +194,7 @@
               <div class="form-group">
                 <label>Question Type</label>
                 <select [(ngModel)]="newQuestion.questionType" name="questionType" class="form-control">
-                  <option *ngFor="let type of questionTypes" [value]="type">{{ type }}</option>
+                  <option *ngFor="let type of questionTypes" [value]="type">{{ type | titlecase }}</option>
                 </select>
               </div>
               <div class="form-group">
@@ -200,11 +209,11 @@
             <!-- Options for choice questions -->
             <div class="form-group" *ngIf="newQuestion.questionType === 'SINGLE_CHOICE' || newQuestion.questionType === 'MULTIPLE_CHOICE' || newQuestion.questionType === 'DROPDOWN'">
               <label>Options</label>
-              <div class="options-input">
-                <input type="text" [(ngModel)]="optionsInput" name="optionsInput" class="form-control" placeholder="Enter option and press Add">
-                <button type="button" class="btn-add-option" (click)="addOption()">Add</button>
+              <div class="options-input-group">
+                <input type="text" [(ngModel)]="optionsInput" name="optionsInput" class="form-control" placeholder="Enter option and press Add" (keyup.enter)="addOption()">
+                <button type="button" class="btn-add-option" (click)="addOption()">Add Option</button>
               </div>
-              <div class="options-list" *ngIf="newQuestion.options && newQuestion.options.length > 0">
+              <div class="options-list" *ngIf="newQuestion.options?.length > 0">
                 <span class="option-badge" *ngFor="let opt of newQuestion.options; let idx = index">
                   {{ opt }}
                   <button type="button" class="remove-option" (click)="removeOption(idx)">✕</button>
@@ -229,35 +238,65 @@
 
 <!-- ===== DETAILS MODAL ===== -->
 <div class="modal-overlay" *ngIf="showDetailsModal" (click)="closeDetailsModal()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
+  <div class="modal-container modal-large" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>📋 Survey Details</h3>
       <button class="modal-close" (click)="closeDetailsModal()">✕</button>
     </div>
     <div class="modal-body" *ngIf="selectedSurvey">
       <div class="details-card">
-        <div class="detail-row"><label>Title:</label><span>{{ selectedSurvey.title }}</span></div>
-        <div class="detail-row"><label>Description:</label><span>{{ selectedSurvey.description }}</span></div>
-        <div class="detail-row"><label>Period:</label><span>{{ formatDate(selectedSurvey.startDate) }} - {{ formatDate(selectedSurvey.endDate) }}</span></div>
-        <div class="detail-row"><label>Academic Year:</label><span>{{ selectedSurvey.academicYear }} ({{ selectedSurvey.semester }})</span></div>
-        <div class="detail-row"><label>Status:</label><span class="status-badge" [class]="getStatusClass(selectedSurvey.status)">{{ selectedSurvey.status }}</span></div>
-        <div class="detail-row"><label>Target Responses:</label><span>{{ selectedSurvey.targetResponses }}</span></div>
-        <div class="detail-row"><label>Created:</label><span>{{ selectedSurvey.createdAt | date:'medium' }}</span></div>
-        <div class="detail-row"><label>Updated:</label><span>{{ selectedSurvey.updatedAt | date:'medium' }}</span></div>
+        <div class="detail-row">
+          <label>Title:</label>
+          <span>{{ selectedSurvey.title }}</span>
+        </div>
+        <div class="detail-row">
+          <label>Description:</label>
+          <span>{{ selectedSurvey.description || 'No description' }}</span>
+        </div>
+        <div class="detail-row">
+          <label>Period:</label>
+          <span>{{ formatDate(selectedSurvey.startDate) }} - {{ formatDate(selectedSurvey.endDate) }}</span>
+        </div>
+        <div class="detail-row">
+          <label>Academic Year:</label>
+          <span>{{ selectedSurvey.academicYear }} ({{ selectedSurvey.semester }})</span>
+        </div>
+        <div class="detail-row">
+          <label>Status:</label>
+          <span class="status-badge" [class]="getStatusClass(selectedSurvey.status)">{{ selectedSurvey.status }}</span>
+        </div>
+        <div class="detail-row">
+          <label>Target Responses:</label>
+          <span>{{ selectedSurvey.targetResponses }}</span>
+        </div>
+        <div class="detail-row">
+          <label>Created:</label>
+          <span>{{ selectedSurvey.createdAt | date:'medium' }}</span>
+        </div>
+        <div class="detail-row">
+          <label>Updated:</label>
+          <span>{{ selectedSurvey.updatedAt | date:'medium' }}</span>
+        </div>
       </div>
 
       <div class="questions-section">
-        <h4>Questions ({{ selectedSurvey.questions.length }})</h4>
+        <h4>Questions ({{ (selectedSurvey.questions || []).length }})</h4>
         <div class="question-list-detail">
-          <div class="question-detail-item" *ngFor="let q of selectedSurvey.questions">
+          <div class="question-detail-item" *ngFor="let q of selectedSurvey.questions || []; let idx = index">
             <div class="question-header-detail">
-              <strong>Q{{ q.displayOrder }}.</strong> {{ q.questionText }}
-              <span class="question-type-badge">{{ q.questionType }}</span>
-              <span class="required-badge" [class.required]="q.required">{{ q.required ? 'Required' : 'Optional' }}</span>
+              <strong>Q{{ q.displayOrder || (idx+1) }}.</strong> {{ q.questionText }}
+              <div class="question-badges">
+                <span class="question-type-badge">{{ q.questionType }}</span>
+                <span class="required-badge" [class.required]="q.required">{{ q.required ? 'Required' : 'Optional' }}</span>
+              </div>
             </div>
-            <!-- FIXED: Using helper method for options display -->
             <div class="question-options-detail" *ngIf="getOptionsArray(q.options).length > 0">
-              <small>Options: {{ getOptionsString(q.options) }}</small>
+              <span class="options-label-detail">Options:</span>
+              <div class="options-list-detail">
+                <span class="option-detail-tag" *ngFor="let opt of getOptionsArray(q.options)">
+                  {{ opt }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -274,7 +313,10 @@
       <button class="modal-close" (click)="closeResponsesModal()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="responses-table-container">
+      <div *ngIf="surveyResponses.length === 0" class="empty-state-small">
+        <p>No responses submitted yet.</p>
+      </div>
+      <div class="responses-table-container" *ngIf="surveyResponses.length > 0">
         <table class="responses-table">
           <thead>
             <tr>
@@ -297,16 +339,16 @@
               <td>{{ response.dropPoint }}</td>
               <td>{{ response.pickupTime }}</td>
               <td>
-                <select class="status-select-small" [value]="response.status" (change)="updateResponseStatus(response, $event)">
-                  <option *ngFor="let status of responseStatuses" [value]="status">{{ status }}</option>
-                </select>
-              </td>
-              <td>
                 <span class="status-badge-small" [class]="getResponseStatusClass(response.status)">
                   {{ response.status }}
                 </span>
-              </td>
-            </tr>
+               </td>
+              <td>
+                <select class="status-select-small" [value]="response.status" (change)="updateResponseStatus(response, $event)">
+                  <option *ngFor="let status of responseStatuses" [value]="status">{{ status }}</option>
+                </select>
+               </td>
+             </tr>
           </tbody>
         </table>
       </div>
@@ -316,7 +358,7 @@
 
 <!-- ===== STATISTICS MODAL ===== -->
 <div class="modal-overlay" *ngIf="showStatisticsModal" (click)="closeStatisticsModal()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
+  <div class="modal-container modal-large" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>📊 Survey Statistics - {{ selectedSurvey?.title }}</h3>
       <button class="modal-close" (click)="closeStatisticsModal()">✕</button>
@@ -328,28 +370,28 @@
           <div class="stat-label">Total Responses</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ surveyStatistics.confirmedResponses }}</div>
+          <div class="stat-value">{{ surveyStatistics.confirmedResponses || 0 }}</div>
           <div class="stat-label">Confirmed</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ surveyStatistics.waitlistedResponses }}</div>
+          <div class="stat-value">{{ surveyStatistics.waitlistedResponses || 0 }}</div>
           <div class="stat-label">Waitlisted</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ surveyStatistics.pendingResponses }}</div>
+          <div class="stat-value">{{ surveyStatistics.pendingResponses || 0 }}</div>
           <div class="stat-label">Pending</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ surveyStatistics.rejectedResponses }}</div>
+          <div class="stat-value">{{ surveyStatistics.rejectedResponses || 0 }}</div>
           <div class="stat-label">Rejected</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">{{ surveyStatistics.targetProgress }}%</div>
+          <div class="stat-value">{{ surveyStatistics.targetProgress || 0 }}%</div>
           <div class="stat-label">Target Progress</div>
         </div>
       </div>
 
-      <div class="progress-bar-container">
+      <div class="progress-bar-container" *ngIf="surveyStatistics.targetProgress">
         <div class="progress-label">Target Progress: {{ surveyStatistics.targetProgress }}%</div>
         <div class="progress-bar">
           <div class="progress-fill" [style.width.%]="surveyStatistics.targetProgress"></div>

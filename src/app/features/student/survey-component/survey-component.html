@@ -1,27 +1,30 @@
-<!-- <app-navbar></app-navbar> -->
-
 <div class="survey-container">
   <div class="survey-header">
-    <h1>📋 Surveys</h1>
-    <p>Participate in ongoing surveys to help us improve our services</p>
+    <h1>📋 Bus Service Surveys</h1>
+    <p>Participate in ongoing surveys to help us improve our bus services</p>
   </div>
   
   <div *ngIf="errorMessage" class="alert alert-error">
     {{ errorMessage }}
   </div>
   
-  <div *ngIf="loading" class="loading-state">
+  <div *ngIf="!studentData && !errorMessage" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading your information...</p>
+  </div>
+  
+  <div *ngIf="loading && studentData" class="loading-state">
     <div class="spinner"></div>
     <p>Loading surveys...</p>
   </div>
   
-  <div *ngIf="!loading && surveys.length === 0" class="empty-state">
+  <div *ngIf="!loading && studentData && surveys.length === 0 && !showSurveyForm" class="empty-state">
     <div class="empty-icon">📭</div>
     <h3>No Active Surveys</h3>
     <p>There are no active surveys available at the moment. Please check back later.</p>
   </div>
   
-  <div *ngIf="!loading && surveys.length > 0 && !showSurveyForm" class="surveys-grid">
+  <div *ngIf="!loading && studentData && surveys.length > 0 && !showSurveyForm" class="surveys-grid">
     <div *ngFor="let survey of surveys" class="survey-card">
       <div class="survey-card-header">
         <h3>{{ survey.title }}</h3>
@@ -42,7 +45,7 @@
           </div>
           <div class="meta-item">
             <span class="meta-label">Questions:</span>
-            <span>{{ survey.questions.length }}</span>
+            <span>{{ (survey.questions || []).length }}</span>
           </div>
           <div class="meta-item">
             <span class="meta-label">Deadline:</span>
@@ -57,7 +60,7 @@
   </div>
   
   <!-- Survey Form Modal -->
-  <div *ngIf="showSurveyForm && selectedSurvey" class="modal-overlay" (click)="closeSurvey()">
+  <div *ngIf="showSurveyForm && selectedSurvey && studentData" class="modal-overlay" (click)="closeSurvey()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>{{ selectedSurvey.title }}</h2>
@@ -66,65 +69,139 @@
       <div class="modal-body">
         <p class="survey-description">{{ selectedSurvey.description }}</p>
         
+        <!-- Display student info for confirmation -->
+        <div class="student-info-card">
+          <h4>Student Information</h4>
+          <div class="info-row">
+            <span class="info-label">Name:</span>
+            <span>{{ studentData.name }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Student ID:</span>
+            <span>{{ studentData.studentId }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Department:</span>
+            <span>{{ studentData.department }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Batch:</span>
+            <span>{{ studentData.batch }}</span>
+          </div>
+        </div>
+        
         <form (ngSubmit)="submitSurvey()">
-          <div *ngFor="let question of selectedSurvey.questions; let i = index" class="question-item">
-            <label class="question-label">
-              {{ question.questionText }}
-              <span *ngIf="question.required" class="required-star">*</span>
-            </label>
+          <!-- Bus Service Specific Fields -->
+          <div class="form-section">
+            <h3>Bus Service Information</h3>
             
-            <div [ngSwitch]="question.questionType">
-              <!-- Text Input -->
-              <input *ngSwitchCase="'TEXT'" 
-                     type="text" 
-                     [(ngModel)]="responses[i]" 
-                     [name]="'question_' + i"
-                     class="form-control"
-                     [required]="question.required">
+            <div class="form-group">
+              <label>Boarding Point *</label>
+              <input type="text" 
+                     [(ngModel)]="boardingPoint" 
+                     name="boardingPoint"
+                     class="form-control" 
+                     placeholder="Enter your boarding point"
+                     required>
+            </div>
+            
+            <div class="form-group">
+              <label>Drop Point *</label>
+              <input type="text" 
+                     [(ngModel)]="dropPoint" 
+                     name="dropPoint"
+                     class="form-control" 
+                     placeholder="Enter your drop point"
+                     required>
+            </div>
+            
+            <div class="form-group">
+              <label>Preferred Pickup Time *</label>
+              <input type="time" 
+                     [(ngModel)]="pickupTime" 
+                     name="pickupTime"
+                     class="form-control" 
+                     required>
+              <small class="form-text">Please select your preferred pickup time</small>
+            </div>
+          </div>
+          
+          <!-- Survey Questions -->
+          <div class="form-section" *ngIf="(selectedSurvey.questions || []).length > 0">
+            <h3>Survey Questions</h3>
+            
+            <div *ngFor="let question of (selectedSurvey.questions || []); let i = index" class="question-item">
+              <label class="question-label">
+                {{ question.questionText }}
+                <span *ngIf="question.required" class="required-star">*</span>
+              </label>
               
-              <!-- Textarea -->
-              <textarea *ngSwitchCase="'TEXTAREA'" 
+              <div [ngSwitch]="question.questionType">
+                <!-- TEXT type -->
+                <input *ngSwitchCase="'TEXT'" 
+                       type="text" 
+                       [(ngModel)]="responses[i]" 
+                       [name]="'question_' + i"
+                       class="form-control"
+                       [required]="question.required">
+                
+                <!-- SINGLE_CHOICE (Radio buttons) -->
+                <div *ngSwitchCase="'SINGLE_CHOICE'" class="radio-group">
+                  <label *ngFor="let option of parseOptions(question.options)" class="radio-label">
+                    <input type="radio" 
+                           [(ngModel)]="responses[i]" 
+                           [name]="'question_' + i"
+                           [value]="option"
+                           [required]="question.required">
+                    {{ option }}
+                  </label>
+                </div>
+                
+                <!-- MULTIPLE_CHOICE (Checkboxes) -->
+                <div *ngSwitchCase="'MULTIPLE_CHOICE'" class="checkbox-group">
+                  <label *ngFor="let option of parseOptions(question.options)" class="checkbox-label">
+                    <input type="checkbox" 
+                           [value]="option"
+                           (change)="updateCheckboxResponse(i, option, $event)"
+                           [required]="question.required">
+                    {{ option }}
+                  </label>
+                </div>
+                
+                <!-- DROPDOWN (Select) -->
+                <select *ngSwitchCase="'DROPDOWN'" 
                         [(ngModel)]="responses[i]" 
                         [name]="'question_' + i"
                         class="form-control"
-                        rows="3"
-                        [required]="question.required"></textarea>
-              
-              <!-- Radio Buttons -->
-              <div *ngSwitchCase="'RADIO'" class="radio-group">
-                <label *ngFor="let option of parseOptions(question.options)" class="radio-label">
-                  <input type="radio" 
-                         [(ngModel)]="responses[i]" 
-                         [name]="'question_' + i"
-                         [value]="option"
-                         [required]="question.required">
-                  {{ option }}
-                </label>
+                        [required]="question.required">
+                  <option value="">Select an option</option>
+                  <option *ngFor="let option of parseOptions(question.options)" [value]="option">
+                    {{ option }}
+                  </option>
+                </select>
+                
+                <!-- RATING (1-5 stars) -->
+                <div *ngSwitchCase="'RATING'" class="rating-group">
+                  <label *ngFor="let rating of [1,2,3,4,5]" class="rating-label">
+                    <input type="radio" 
+                           [(ngModel)]="responses[i]" 
+                           [name]="'question_' + i"
+                           [value]="rating"
+                           [required]="question.required">
+                    {{ rating }} ★
+                  </label>
+                </div>
               </div>
-              
-              <!-- Checkboxes -->
-              <div *ngSwitchCase="'CHECKBOX'" class="checkbox-group">
-                <label *ngFor="let option of parseOptions(question.options)" class="checkbox-label">
-                  <input type="checkbox" 
-                         [value]="option"
-                         (change)="updateCheckboxResponse(i, option, $event)"
-                         [required]="question.required">
-                  {{ option }}
-                </label>
-              </div>
-              
-              <!-- Select Dropdown -->
-              <select *ngSwitchCase="'SELECT'" 
-                      [(ngModel)]="responses[i]" 
-                      [name]="'question_' + i"
-                      class="form-control"
-                      [required]="question.required">
-                <option value="">Select an option</option>
-                <option *ngFor="let option of parseOptions(question.options)" [value]="option">
-                  {{ option }}
-                </option>
-              </select>
             </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Additional Notes (Optional)</label>
+            <textarea [(ngModel)]="additionalNotes" 
+                      name="additionalNotes"
+                      class="form-control" 
+                      rows="3"
+                      placeholder="Any additional comments or suggestions?"></textarea>
           </div>
           
           <div class="form-actions">

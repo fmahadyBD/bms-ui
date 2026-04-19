@@ -4,11 +4,13 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 export interface Question {
+  id?: number;
   questionText: string;
   questionType: string;
-  options?: string | string[] | null;  // Allow null
+  options?: string | string[] | null;
   displayOrder: number;
   required: boolean;
+  isActive?: boolean;
 }
 
 export interface SurveyRequest {
@@ -23,6 +25,26 @@ export interface SurveyRequest {
   questions: Question[];
 }
 
+// export interface SurveyResponse {
+//   id: number;
+//   title: string;
+//   description: string;
+//   startDate: string;
+//   endDate: string;
+//   academicYear: string;
+//   semester: string;
+//   targetResponses: number;
+//   totalResponses?: number;  // Make optional since backend might not return it
+//   status: string;
+//   isActive?: boolean;
+//   questions: Question[];
+//   createdAt: string;
+//   updatedAt: string;
+//   createdBy?: number;
+//   updatedBy?: number;
+// }
+
+// src/app/features/survey/survey.service.ts
 export interface SurveyResponse {
   id: number;
   title: string;
@@ -33,10 +55,14 @@ export interface SurveyResponse {
   semester: string;
   targetResponses: number;
   status: string;
-  questions: Question[];
+  isActive?: boolean;
+  questions?: Question[];  // Make this optional
   createdAt: string;
   updatedAt: string;
+  createdBy?: number;
+  updatedBy?: number;
 }
+
 
 export interface StudentResponse {
   id: number;
@@ -58,14 +84,19 @@ export interface StudentResponse {
 }
 
 export interface SurveyStatistics {
+  surveyId?: number;
+  surveyTitle?: string;
   totalResponses: number;
-  confirmedResponses: number;
-  waitlistedResponses: number;
-  pendingResponses: number;
-  rejectedResponses: number;
-  targetProgress: number;
-  routeDistribution: { [key: string]: number };
-  pickupTimeDistribution: { [key: string]: number };
+  confirmedResponses?: number;
+  waitlistedResponses?: number;
+  pendingResponses?: number;
+  rejectedResponses?: number;
+  targetProgress?: number;
+  completionRate?: number;
+  targetResponses?: number;
+  responsesByStatus?: { [key: string]: number };
+  routeDistribution?: { [key: string]: number };
+  pickupTimeDistribution?: { [key: string]: number };
 }
 
 @Injectable({

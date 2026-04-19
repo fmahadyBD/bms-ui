@@ -23,6 +23,23 @@ export interface SurveyRequest {
   questions: Question[];
 }
 
+// export interface SurveyResponse {
+//   id: number;
+//   title: string;
+//   description: string;
+//   startDate: string;
+//   endDate: string;
+//   academicYear: string;
+//   semester: string;
+//   targetResponses: number;
+//   status: string;
+//   questions: Question[];
+//   createdAt: string;
+//   updatedAt: string;
+// }
+
+
+// survey.service.ts - Update the SurveyResponse interface
 export interface SurveyResponse {
   id: number;
   title: string;
@@ -33,10 +50,15 @@ export interface SurveyResponse {
   semester: string;
   targetResponses: number;
   status: string;
-  questions: Question[];
+  isActive?: boolean;
+  questions?: Question[];  // Make this optional with ?
   createdAt: string;
   updatedAt: string;
+  createdBy?: number;
+  updatedBy?: number;
+  totalResponses?: number;
 }
+
 
 export interface StudentResponse {
   id: number;

@@ -1,3 +1,4 @@
+// survey-management.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -15,6 +16,7 @@ export class SurveyManagementComponent implements OnInit {
   selectedSurvey: SurveyResponse | null = null;
   loading = false;
   actionLoading = false;
+  errorMessage: string = '';
 
   showAddModal = false;
   showEditModal = false;
@@ -29,7 +31,7 @@ export class SurveyManagementComponent implements OnInit {
     description: '',
     startDate: '',
     endDate: '',
-    academicYear: '2025-2026',
+    academicYear: '',
     semester: 'Spring',
     targetResponses: 100,
     status: 'DRAFT',
@@ -48,7 +50,7 @@ export class SurveyManagementComponent implements OnInit {
   optionsInput = '';
   
   semesters = ['Spring', 'Summer', 'Fall', 'Winter'];
-  academicYears = ['2023-2024', '2024-2025', '2025-2026', '2026-2027'];
+  academicYears: string[] = [];
 
   // Response management properties
   surveyResponses: StudentResponse[] = [];
@@ -74,10 +76,20 @@ export class SurveyManagementComponent implements OnInit {
   constructor(private surveyService: SurveyService) {}
 
   ngOnInit() {
+    this.generateAcademicYears();
     this.loadSurveys();
   }
 
-  // Helper methods for type-safe template handling
+  generateAcademicYears() {
+    const currentYear = new Date().getFullYear();
+    this.academicYears = [];
+    for (let i = -3; i <= 3; i++) {
+      const startYear = currentYear + i;
+      const endYear = startYear + 1;
+      this.academicYears.push(`${startYear}-${endYear}`);
+    }
+  }
+
   getOptionsArray(options: string | string[] | null | undefined): string[] {
     if (!options) {
       return [];
@@ -87,7 +99,6 @@ export class SurveyManagementComponent implements OnInit {
       return options;
     }
     
-    // If it's a string, try to parse it as JSON
     if (typeof options === 'string') {
       try {
         const parsed = JSON.parse(options);
@@ -95,7 +106,6 @@ export class SurveyManagementComponent implements OnInit {
           return parsed;
         }
       } catch (e) {
-        // If parsing fails, treat as single option
         return options ? [options] : [];
       }
     }
@@ -110,26 +120,38 @@ export class SurveyManagementComponent implements OnInit {
 
   loadSurveys() {
     this.loading = true;
+    this.errorMessage = '';
+    console.log('Loading surveys...');
+    
     this.surveyService.getAllSurveys().subscribe({
       next: (data) => {
+        console.log('Surveys loaded:', data);
         this.surveys = data;
         this.loading = false;
+        
+        if (data.length === 0) {
+          console.log('No surveys found');
+        }
       },
       error: (error) => {
         console.error('Error loading surveys:', error);
+        this.errorMessage = `Failed to load surveys: ${error.error?.message || error.message || 'Unknown error'}`;
         this.loading = false;
-        alert('Failed to load surveys');
+        alert(this.errorMessage);
       }
     });
   }
 
   openAddModal() {
+    const currentYear = new Date().getFullYear();
+    const defaultAcademicYear = `${currentYear}-${currentYear + 1}`;
+    
     this.surveyForm = {
       title: '',
       description: '',
       startDate: '',
       endDate: '',
-      academicYear: '2025-2026',
+      academicYear: defaultAcademicYear,
       semester: 'Spring',
       targetResponses: 100,
       status: 'DRAFT',
@@ -149,21 +171,29 @@ export class SurveyManagementComponent implements OnInit {
       return;
     }
 
-    // CRITICAL FIX: Convert options array to JSON string for each question
-    const processedQuestions = this.surveyForm.questions.map(q => {
+    if (!this.surveyForm.startDate) {
+      alert('Start date is required');
+      return;
+    }
+
+    if (!this.surveyForm.endDate) {
+      alert('End date is required');
+      return;
+    }
+
+    const formattedStartDate = new Date(this.surveyForm.startDate).toISOString().split('T')[0];
+    const formattedEndDate = new Date(this.surveyForm.endDate).toISOString().split('T')[0];
+
+    const processedQuestions = this.surveyForm.questions.map((q, index) => {
       const processedQuestion: any = {
         questionText: q.questionText,
         questionType: q.questionType,
-        displayOrder: q.displayOrder,
+        displayOrder: q.displayOrder || index + 1,
         required: q.required
       };
       
-      // Handle options: convert array to JSON string or set to null
       if (q.options && Array.isArray(q.options) && q.options.length > 0) {
         processedQuestion.options = JSON.stringify(q.options);
-      } else if (typeof q.options === 'string' && q.options) {
-        // If it's already a string, keep as is
-        processedQuestion.options = q.options;
       } else {
         processedQuestion.options = null;
       }
@@ -173,17 +203,16 @@ export class SurveyManagementComponent implements OnInit {
 
     const surveyData: any = {
       title: this.surveyForm.title,
-      description: this.surveyForm.description,
-      startDate: this.surveyForm.startDate,
-      endDate: this.surveyForm.endDate,
+      description: this.surveyForm.description || '',
+      startDate: formattedStartDate,
+      endDate: formattedEndDate,
       academicYear: this.surveyForm.academicYear,
       semester: this.surveyForm.semester,
-      targetResponses: this.surveyForm.targetResponses,
+      targetResponses: this.surveyForm.targetResponses || 100,
       status: this.surveyForm.status,
       questions: processedQuestions
     };
 
-    // Debug: Log what we're sending
     console.log('Sending survey data:', JSON.stringify(surveyData, null, 2));
 
     this.actionLoading = true;
@@ -197,8 +226,19 @@ export class SurveyManagementComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error creating survey:', error);
-        console.error('Error details:', error.error);
-        alert('Failed to create survey: ' + (error.error?.message || error.message));
+        let errorMsg = 'Failed to create survey: ';
+        if (error.error) {
+          if (typeof error.error === 'string') {
+            errorMsg += error.error;
+          } else if (error.error.message) {
+            errorMsg += error.error.message;
+          } else if (error.error.errors) {
+            errorMsg += JSON.stringify(error.error.errors);
+          }
+        } else {
+          errorMsg += error.message;
+        }
+        alert(errorMsg);
         this.actionLoading = false;
       }
     });
@@ -207,8 +247,8 @@ export class SurveyManagementComponent implements OnInit {
   editSurvey(survey: SurveyResponse) {
     this.selectedSurvey = survey;
     
-    // Parse options from JSON string back to array for editing
-    const questions = survey.questions.map(q => {
+    // FIXED: Add null check for survey.questions
+    const questions = (survey.questions || []).map(q => {
       const question: any = {
         questionText: q.questionText,
         questionType: q.questionType,
@@ -217,7 +257,6 @@ export class SurveyManagementComponent implements OnInit {
         options: []
       };
       
-      // Parse options if it's a string
       if (q.options && typeof q.options === 'string') {
         try {
           question.options = JSON.parse(q.options);
@@ -254,21 +293,24 @@ export class SurveyManagementComponent implements OnInit {
   updateSurvey() {
     if (!this.selectedSurvey) return;
     
-    // CRITICAL FIX: Convert options array to JSON string for each question
-    const processedQuestions = this.surveyForm.questions.map(q => {
+    if (!this.surveyForm.title) {
+      alert('Survey title is required');
+      return;
+    }
+
+    const formattedStartDate = new Date(this.surveyForm.startDate).toISOString().split('T')[0];
+    const formattedEndDate = new Date(this.surveyForm.endDate).toISOString().split('T')[0];
+
+    const processedQuestions = this.surveyForm.questions.map((q, index) => {
       const processedQuestion: any = {
         questionText: q.questionText,
         questionType: q.questionType,
-        displayOrder: q.displayOrder,
+        displayOrder: q.displayOrder || index + 1,
         required: q.required
       };
       
-      // Handle options: convert array to JSON string or set to null
       if (q.options && Array.isArray(q.options) && q.options.length > 0) {
         processedQuestion.options = JSON.stringify(q.options);
-      } else if (typeof q.options === 'string' && q.options) {
-        // If it's already a string, keep as is
-        processedQuestion.options = q.options;
       } else {
         processedQuestion.options = null;
       }
@@ -278,17 +320,16 @@ export class SurveyManagementComponent implements OnInit {
 
     const surveyData: any = {
       title: this.surveyForm.title,
-      description: this.surveyForm.description,
-      startDate: this.surveyForm.startDate,
-      endDate: this.surveyForm.endDate,
+      description: this.surveyForm.description || '',
+      startDate: formattedStartDate,
+      endDate: formattedEndDate,
       academicYear: this.surveyForm.academicYear,
       semester: this.surveyForm.semester,
-      targetResponses: this.surveyForm.targetResponses,
+      targetResponses: this.surveyForm.targetResponses || 100,
       status: this.surveyForm.status,
       questions: processedQuestions
     };
 
-    // Debug: Log what we're sending
     console.log('Updating survey data:', JSON.stringify(surveyData, null, 2));
     
     this.actionLoading = true;
@@ -302,7 +343,6 @@ export class SurveyManagementComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error updating survey:', error);
-        console.error('Error details:', error.error);
         alert('Failed to update survey: ' + (error.error?.message || error.message));
         this.actionLoading = false;
       }
@@ -319,14 +359,17 @@ export class SurveyManagementComponent implements OnInit {
           alert('Status updated!');
           this.loadSurveys();
         },
-        error: () => alert('Failed to update status')
+        error: (error) => {
+          console.error('Error updating status:', error);
+          alert('Failed to update status: ' + (error.error?.message || error.message));
+        }
       });
     }
   }
 
   viewDetails(survey: SurveyResponse) {
-    // Parse options from JSON string to array for display
-    const questions = survey.questions.map(q => {
+    // FIXED: Add null check for survey.questions
+    const questions = (survey.questions || []).map(q => {
       const question: any = { ...q };
       if (q.options && typeof q.options === 'string') {
         try {
@@ -373,13 +416,12 @@ export class SurveyManagementComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error deleting survey:', error);
-        alert('Failed to delete survey');
+        alert('Failed to delete survey: ' + (error.error?.message || error.message));
         this.actionLoading = false;
       }
     });
   }
 
-  // Question management methods
   addQuestion() {
     if (!this.newQuestion.questionText) {
       alert('Please enter question text');
@@ -390,20 +432,22 @@ export class SurveyManagementComponent implements OnInit {
       questionText: this.newQuestion.questionText,
       questionType: this.newQuestion.questionType,
       required: this.newQuestion.required,
-      options: [...this.newQuestion.options], // Create a copy of the options array
+      options: [...this.newQuestion.options],
       displayOrder: this.surveyForm.questions.length + 1
     };
     
     this.surveyForm.questions.push(question);
     this.resetNewQuestion();
+    alert('Question added successfully!');
   }
 
   removeQuestion(index: number) {
-    this.surveyForm.questions.splice(index, 1);
-    // Update display orders
-    this.surveyForm.questions.forEach((q, i) => {
-      q.displayOrder = i + 1;
-    });
+    if (confirm('Remove this question?')) {
+      this.surveyForm.questions.splice(index, 1);
+      this.surveyForm.questions.forEach((q, i) => {
+        q.displayOrder = i + 1;
+      });
+    }
   }
 
   moveQuestionUp(index: number) {
@@ -411,7 +455,6 @@ export class SurveyManagementComponent implements OnInit {
       const temp = this.surveyForm.questions[index];
       this.surveyForm.questions[index] = this.surveyForm.questions[index - 1];
       this.surveyForm.questions[index - 1] = temp;
-      // Update display orders
       this.surveyForm.questions.forEach((q, i) => {
         q.displayOrder = i + 1;
       });
@@ -423,7 +466,6 @@ export class SurveyManagementComponent implements OnInit {
       const temp = this.surveyForm.questions[index];
       this.surveyForm.questions[index] = this.surveyForm.questions[index + 1];
       this.surveyForm.questions[index + 1] = temp;
-      // Update display orders
       this.surveyForm.questions.forEach((q, i) => {
         q.displayOrder = i + 1;
       });
@@ -462,7 +504,6 @@ export class SurveyManagementComponent implements OnInit {
     }
   }
 
-  // Response management methods
   viewResponses(survey: SurveyResponse) {
     this.selectedSurvey = survey;
     this.actionLoading = true;
@@ -474,7 +515,7 @@ export class SurveyManagementComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading responses:', error);
-        alert('Failed to load responses');
+        alert('Failed to load responses: ' + (error.error?.message || error.message));
         this.actionLoading = false;
       }
     });
@@ -501,7 +542,7 @@ export class SurveyManagementComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error updating response status:', error);
-          alert('Failed to update response status');
+          alert('Failed to update response status: ' + (error.error?.message || error.message));
         }
       });
     }
@@ -517,7 +558,6 @@ export class SurveyManagementComponent implements OnInit {
     }
   }
 
-  // Statistics methods
   viewStatistics(survey: SurveyResponse) {
     this.selectedSurvey = survey;
     this.actionLoading = true;
@@ -529,7 +569,7 @@ export class SurveyManagementComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading statistics:', error);
-        alert('Failed to load statistics');
+        alert('Failed to load statistics: ' + (error.error?.message || error.message));
         this.actionLoading = false;
       }
     });
@@ -541,7 +581,6 @@ export class SurveyManagementComponent implements OnInit {
     this.selectedSurvey = null;
   }
 
-  // Submit response methods
   openSubmitResponse(survey: SurveyResponse) {
     this.selectedSurvey = survey;
     this.resetStudentResponse();
@@ -557,7 +596,6 @@ export class SurveyManagementComponent implements OnInit {
   submitStudentResponse() {
     if (!this.selectedSurvey) return;
     
-    // Validate required fields
     if (!this.studentResponse.studentId || !this.studentResponse.studentName || 
         !this.studentResponse.studentEmail || !this.studentResponse.studentPhone ||
         !this.studentResponse.boardingPoint || !this.studentResponse.dropPoint ||
@@ -596,11 +634,9 @@ export class SurveyManagementComponent implements OnInit {
     };
   }
 
-  // Export survey
   exportSurvey(survey: SurveyResponse) {
     this.surveyService.exportSurveyResponses(survey.id).subscribe({
       next: (data: any) => {
-        // Handle both blob and JSON responses
         if (data instanceof Blob) {
           const url = window.URL.createObjectURL(data);
           const a = document.createElement('a');
@@ -623,7 +659,7 @@ export class SurveyManagementComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error exporting survey:', error);
-        alert('Failed to export survey responses');
+        alert('Failed to export survey responses: ' + (error.error?.message || error.message));
       }
     });
   }
@@ -657,6 +693,7 @@ export class SurveyManagementComponent implements OnInit {
   }
 
   formatDate(date: string): string {
+    if (!date) return 'N/A';
     return new Date(date).toLocaleDateString();
   }
 }
