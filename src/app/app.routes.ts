@@ -42,6 +42,10 @@ export const routes: Routes = [
       {
         path: 'my-route',
         loadComponent: () => import('./features/student/my-route-component/my-route-component').then(m => m.MyRouteComponent)
+      },
+      {
+        path: 'bus-request',
+        loadComponent: () => import('./features/bus-request/student-bus-request.component/student-bus-request.component').then(m => m.StudentBusRequestComponent)
       }
     ]
   },
@@ -57,7 +61,13 @@ export const routes: Routes = [
       { path: 'buses', loadComponent: () => import('./features/bus/bus-component/bus-component').then(m => m.BusComponent) },
       { path: 'routes', loadComponent: () => import('./features/route/route-component/route-component').then(m => m.RouteComponent) },
       { path: 'bus-slots', loadComponent: () => import('./features/bus-slot/bus-slot/bus-slot').then(m => m.BusSlotComponent) },
-      { path: 'surveys', loadComponent: () => import('./features/survey/survey-management/survey-management').then(m => m.SurveyManagementComponent) }
+      { path: 'surveys', loadComponent: () => import('./features/survey/survey-management/survey-management').then(m => m.SurveyManagementComponent) },
+      {
+        path: 'bus-requests',
+        loadComponent: () => import('./features/bus-request/admin-bus-requests.component/admin-bus-requests.component').then(m => m.AdminBusRequestsComponent)
+      }
+
+
     ]
   },
   { path: '**', redirectTo: '' }

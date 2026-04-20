@@ -92,8 +92,8 @@ export class NavbarComponent implements OnInit {
     this.mobileMenuOpen = false;
   }
 
-  navigateToReports() {
-    this.router.navigate(['/manager-dashboard/reports']);
+  navigateToRequest() {
+    this.router.navigate(['/manager-dashboard/bus-requests']);
     this.mobileMenuOpen = false;
   }
 

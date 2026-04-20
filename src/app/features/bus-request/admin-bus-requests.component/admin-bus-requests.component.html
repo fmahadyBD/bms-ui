@@ -1,0 +1,191 @@
+<div class="container-fluid mt-4">
+  <!-- Header -->
+  <div class="page-header mb-4">
+    <h1><i class="bi bi-bus-front"></i> Bus Request Management</h1>
+    <p class="text-muted">Manage student bus requests, approve or reject them</p>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show">
+    {{successMessage}}
+    <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+  </div>
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show">
+    {{errorMessage}}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="row mb-4" *ngIf="statistics">
+    <div class="col-md-3">
+      <div class="stat-card bg-primary text-white">
+        <div class="stat-value">{{statistics.totalRequests}}</div>
+        <div class="stat-label">Total Requests</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card bg-warning text-dark">
+        <div class="stat-value">{{statistics.pendingRequests}}</div>
+        <div class="stat-label">Pending</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card bg-success text-white">
+        <div class="stat-value">{{statistics.approvedRequests}}</div>
+        <div class="stat-label">Approved</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card bg-danger text-white">
+        <div class="stat-value">{{statistics.rejectedRequests}}</div>
+        <div class="stat-label">Rejected</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-3">
+          <label class="form-label">Status</label>
+          <select class="form-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
+            <option value="ALL">All</option>
+            <option value="REQUESTED">Pending</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Route</label>
+          <select class="form-select" [(ngModel)]="routeFilter" (change)="applyFilters()">
+            <option [ngValue]="null">All Routes</option>
+            <option *ngFor="let route of routes" [ngValue]="route.id">
+              {{route.routeName}}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Search</label>
+          <input type="text" class="form-control" [(ngModel)]="searchTerm" 
+                 placeholder="Search by student name or ID" (input)="applyFilters()">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">&nbsp;</label>
+          <button class="btn btn-secondary w-100" (click)="clearFilters()">Clear Filters</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Requests Table -->
+  <div class="card">
+    <div class="card-header bg-dark text-white">
+      <h5 class="mb-0">Bus Requests ({{filteredRequests.length}})</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Student</th>
+              <th>Route</th>
+              <th>Pickup Point</th>
+              <th>Date Range</th>
+              <th>Status</th>
+              <th>Requested</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let request of filteredRequests">
+              <td>#{{request.id}}</td>
+              <td>
+                <strong>{{request.student.name}}</strong><br>
+                <small class="text-muted">{{request.student.studentId}}</small><br>
+                <small>{{request.student.email}}</small>
+              </td>
+              <td>
+                {{request.route.routeName}}<br>
+                <small class="text-muted">Bus: {{request.route.busNo}}</small>
+              </td>
+              <td>
+                {{request.pickupPoint.placeName}}<br>
+                <small class="text-muted">{{request.pickupPoint.pickupTime}}</small>
+              </td>
+              <td>
+                <small>{{request.requestedFrom}}<br>to {{request.requestedTo}}</small>
+              </td>
+              <td>
+                <span [class]="getStatusBadgeClass(request.status)" class="px-2 py-1 rounded">
+                  {{getStatusIcon(request.status)}} {{request.status}}
+                </span>
+              </td>
+              <td>
+                <small>{{request.createdAt | date:'dd/MM/yyyy'}}</small>
+              </td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-primary" (click)="openStatusModal(request)" 
+                          *ngIf="request.status === 'REQUESTED'">
+                    Process
+                  </button>
+                  <button class="btn btn-danger" (click)="deleteRequest(request.id)">
+                    Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="filteredRequests.length === 0 && !loading">
+              <td colspan="8" class="text-center py-4 text-muted">
+                No bus requests found
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Update Modal -->
+  <div class="modal" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Update Request Status</h5>
+          <button type="button" class="btn-close" (click)="closeModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div *ngIf="selectedRequest" class="mb-3">
+            <p><strong>Student:</strong> {{selectedRequest.student.name}}</p>
+            <p><strong>Route:</strong> {{selectedRequest.route.routeName}}</p>
+            <p><strong>Pickup:</strong> {{selectedRequest.pickupPoint.placeName}} ({{selectedRequest.pickupPoint.pickupTime}})</p>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select class="form-select" [(ngModel)]="statusUpdate.status">
+              <option value="APPROVED">✅ Approve</option>
+              <option value="REJECTED">❌ Reject</option>
+            </select>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Admin Remarks</label>
+            <textarea class="form-control" rows="3" [(ngModel)]="statusUpdate.adminRemarks" 
+                      placeholder="Add remarks (optional)"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+          <button type="button" class="btn btn-primary" (click)="updateStatus()">
+            Update Status
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop" *ngIf="showModal"></div>
+</div>
