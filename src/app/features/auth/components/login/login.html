@@ -1,37 +1,53 @@
-<form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-  <div class="form-group">
-    <label for="email">Email Address</label>
-    <input
-      type="email"
-      id="email"
-      formControlName="email"
-      placeholder="Enter your email"
-      class="form-control"
-    />
-    <div class="error" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
-      Valid email is required
+<div class="login-container">
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label>
+        <i class="fas fa-envelope"></i>
+        Email Address
+      </label>
+      <div class="input-group">
+        <i class="fas fa-envelope input-icon"></i>
+        <input
+          type="email"
+          formControlName="email"
+          placeholder="Enter your email"
+          class="form-control"
+          [class.is-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+        />
+      </div>
+      <div class="error" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+        <i class="fas fa-exclamation-circle"></i> Valid email is required
+      </div>
     </div>
-  </div>
 
-  <div class="form-group">
-    <label for="password">Password</label>
-    <input
-      type="password"
-      id="password"
-      formControlName="password"
-      placeholder="Enter your password"
-      class="form-control"
-    />
-    <div class="error" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
-      Password is required (min 6 characters)
+    <div class="form-group">
+      <label>
+        <i class="fas fa-key"></i>
+        Password
+      </label>
+      <div class="input-group">
+        <i class="fas fa-lock input-icon"></i>
+        <input
+          type="password"
+          formControlName="password"
+          placeholder="Enter your password"
+          class="form-control"
+          [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+        />
+      </div>
+      <div class="error" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+        <i class="fas fa-exclamation-circle"></i> Password is required (min 6 characters)
+      </div>
     </div>
-  </div>
 
-  <div class="error-message" *ngIf="errorMessage">
-    {{ errorMessage }}
-  </div>
+    <div class="error-message" *ngIf="errorMessage">
+      <i class="fas fa-circle-exclamation"></i> {{ errorMessage }}
+    </div>
 
-  <button type="submit" [disabled]="loading || loginForm.invalid" class="btn-login">
-    {{ loading ? 'Logging in...' : 'Login' }}
-  </button>
-</form>
+    <button type="submit" [disabled]="loading || loginForm.invalid" class="btn-login">
+      <i class="fas fa-bus" *ngIf="!loading"></i>
+      <i class="fas fa-spinner fa-spin" *ngIf="loading"></i>
+      {{ loading ? 'Logging in...' : 'Login to Dashboard' }}
+    </button>
+  </form>
+</div>

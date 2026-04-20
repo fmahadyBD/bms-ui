@@ -1,90 +1,228 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 .landing-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
 }
 
-.hero-section {
+/* ── PHASE 1: Intro state — logo centered, page is a flex column ── */
+.landing-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   min-height: 100vh;
-  padding: 20px;
 }
 
-.hero-content {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.hero-content h1 {
-  font-size: 48px;
-  color: white;
-  margin-bottom: 10px;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-}
-
-.hero-content p {
-  font-size: 20px;
-  color: rgba(255,255,255,0.9);
-}
-
-.auth-container {
+/* ── Logo Section ── */
+.logo-section {
   width: 100%;
-  max-width: 500px;
+  text-align: center;
+  z-index: 100;
+  /* Start: fills the whole screen vertically */
+  padding-top: 38vh;
+  padding-bottom: 38vh;
+  transition: padding 0.9s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Slide up = shrink padding so logo snaps to top */
+.logo-section.slide-up {
+  padding-top: 40px;
+  padding-bottom: 24px;
+}
+
+.logo-wrapper {
+  display: inline-block;
+  text-align: center;
+}
+
+.main-logo {
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.25));
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.logo-section.slide-up .main-logo {
+  animation: none;
+  width: 72px;
+  height: 72px;
+  transition: width 0.9s ease, height 0.9s ease;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.06); }
+}
+
+.logo-title {
+  font-size: 40px;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+  letter-spacing: -1px;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+  transition: font-size 0.9s ease;
+}
+
+.logo-section.slide-up .logo-title {
+  font-size: 26px;
+}
+
+.logo-subtitle {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.88);
+  margin-top: 8px;
+  letter-spacing: 3px;
+  font-weight: 500;
+  text-transform: uppercase;
+  transition: font-size 0.9s ease, opacity 0.9s ease;
+}
+
+.logo-section.slide-up .logo-subtitle {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* ── Auth Section ── */
+.auth-section {
+  width: 100%;
+  /* ✅ Wide enough for 2-col register form */
+  max-width: 700px;
+  padding: 0 20px 40px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease 0.5s,
+              visibility 0.6s ease 0.5s,
+              transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.45s;
+}
+
+.auth-section.show-auth {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* ── Card ── */
+.auth-card {
   background: white;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  border-radius: 24px;
+  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.45);
   overflow: hidden;
 }
 
-.auth-tabs {
-  display: flex;
-  background: #f7f9fc;
-  border-bottom: 1px solid #e1e8ed;
+.auth-header {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  padding: 28px 30px 24px;
+  text-align: center;
+  color: white;
 }
 
-.auth-tabs button {
-  flex: 1;
-  padding: 15px;
-  font-size: 18px;
-  font-weight: 600;
+.header-icon {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.header-icon i {
+  font-size: 26px;
+  color: white;
+}
+
+.auth-header h3 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.auth-header p {
+  margin: 0;
+  opacity: 0.88;
+  font-size: 13px;
+}
+
+.auth-body {
+  padding: 28px 30px;
+}
+
+.auth-footer {
+  padding: 16px 30px;
+  text-align: center;
+  border-top: 1px solid #e2e8f0;
+  background: #f8f9fc;
+}
+
+.auth-footer p {
+  margin: 0;
+  color: #4a5568;
+  font-size: 14px;
+}
+
+.link-btn {
+  background: none;
   border: none;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.3s;
-  color: #657786;
-}
-
-.auth-tabs button:hover {
-  background: rgba(102, 126, 234, 0.1);
-}
-
-.auth-tabs button.active {
   color: #667eea;
-  border-bottom: 3px solid #667eea;
-  background: white;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.25s ease, transform 0.25s ease;
+  padding: 5px 10px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.link-btn:hover {
+  background: rgba(102, 126, 234, 0.1);
+  transform: translateX(4px);
 }
 
 .auth-form {
-  padding: 30px;
+  animation: fadeIn 0.4s ease-out;
 }
 
-/* Responsive Design */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ── */
 @media (max-width: 768px) {
-  .hero-content h1 {
-    font-size: 32px;
-  }
-  
-  .hero-content p {
-    font-size: 16px;
-  }
-  
-  .auth-container {
-    max-width: 90%;
-  }
-  
-  .auth-form {
-    padding: 20px;
-  }
+  .logo-section { padding-top: 36vh; padding-bottom: 36vh; }
+  .logo-section.slide-up { padding-top: 28px; padding-bottom: 16px; }
+
+  .logo-title { font-size: 30px; }
+  .logo-section.slide-up .logo-title { font-size: 22px; }
+
+  .main-logo { width: 88px; height: 88px; }
+  .logo-section.slide-up .main-logo { width: 60px; height: 60px; }
+
+  .auth-section { max-width: 100%; padding: 0 12px 32px; }
+}
+
+@media (max-width: 480px) {
+  .logo-section { padding-top: 34vh; padding-bottom: 34vh; }
+  .logo-section.slide-up { padding-top: 20px; padding-bottom: 12px; }
+
+  .logo-title { font-size: 22px; }
+  .logo-section.slide-up .logo-title { font-size: 18px; }
+
+  .main-logo { width: 70px; height: 70px; }
+  .logo-section.slide-up .main-logo { width: 50px; height: 50px; }
+
+  .auth-body { padding: 20px 16px; }
 }

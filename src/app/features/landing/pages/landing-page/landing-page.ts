@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { LoginComponent } from '../../../auth/components/login/login';
@@ -16,10 +16,16 @@ import { RegisterComponent } from '../../../auth/components/register/register';
   templateUrl: './landing-page.html',
   styleUrl: './landing-page.css',
 })
-export class LandingPage {
+export class LandingPage implements AfterViewInit {
   showLogin = true;
-  
-  toggleForm() {
-    this.showLogin = !this.showLogin;
+  logoAnimated = false;
+
+  constructor(private cdr: ChangeDetectorRef) {}
+
+  ngAfterViewInit() {
+    setTimeout(() => {
+      this.logoAnimated = true;
+      this.cdr.detectChanges(); // force Angular to pick up the change
+    }, 1200);
   }
 }
