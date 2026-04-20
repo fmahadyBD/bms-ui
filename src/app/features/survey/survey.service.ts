@@ -1,16 +1,47 @@
-// src/app/features/survey/survey.service.ts
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { Question, StudentResponse, SurveyStatistics } from '../student/survey';
+// survey.ts - Add these interfaces and update SurveyResponse
+export interface RouteBasicResponse {
+  id: number;
+  routeName: string;
+  busNo: string;
+  startPoint: string;
+  endPoint: string;
+}
 
-export interface Question {
-  id?: number;
-  questionText: string;
-  questionType: string;
-  options?: string | string[] | null;
-  displayOrder: number;
-  required: boolean;
+export interface BusSlotResponse {
+  id: number;
+  slotName: string;
+  pickupTime: string;
+  dropTime: string;
+  fromLocation: string;
+  toLocation: string;
+  status: string;
+  description?: string;
+  isRegular: boolean;
+  regularDays?: string;
+}
+
+export interface SurveyResponse {
+  id: number;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  academicYear: string;
+  semester: string;
+  targetResponses: number;
+  status: string;
   isActive?: boolean;
+  questions?: Question[];
+  availableRoutes?: RouteBasicResponse[];  // ADD THIS
+  availableSlots?: BusSlotResponse[];      // ADD THIS
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: number;
+  updatedBy?: number;
 }
 
 export interface SurveyRequest {
@@ -23,80 +54,8 @@ export interface SurveyRequest {
   targetResponses: number;
   status: string;
   questions: Question[];
-}
-
-// export interface SurveyResponse {
-//   id: number;
-//   title: string;
-//   description: string;
-//   startDate: string;
-//   endDate: string;
-//   academicYear: string;
-//   semester: string;
-//   targetResponses: number;
-//   totalResponses?: number;  // Make optional since backend might not return it
-//   status: string;
-//   isActive?: boolean;
-//   questions: Question[];
-//   createdAt: string;
-//   updatedAt: string;
-//   createdBy?: number;
-//   updatedBy?: number;
-// }
-
-// src/app/features/survey/survey.service.ts
-export interface SurveyResponse {
-  id: number;
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  academicYear: string;
-  semester: string;
-  targetResponses: number;
-  status: string;
-  isActive?: boolean;
-  questions?: Question[];  // Make this optional
-  createdAt: string;
-  updatedAt: string;
-  createdBy?: number;
-  updatedBy?: number;
-}
-
-
-export interface StudentResponse {
-  id: number;
-  studentId: string;
-  studentName: string;
-  studentEmail: string;
-  studentPhone: string;
-  studentDepartment: string;
-  studentSemester: string;
-  boardingPoint: string;
-  dropPoint: string;
-  pickupTime: string;
-  responseData: any;
-  additionalNotes: string;
-  status: string;
-  statusReason: string;
-  submittedAt: string;
-  surveyId: number;
-}
-
-export interface SurveyStatistics {
-  surveyId?: number;
-  surveyTitle?: string;
-  totalResponses: number;
-  confirmedResponses?: number;
-  waitlistedResponses?: number;
-  pendingResponses?: number;
-  rejectedResponses?: number;
-  targetProgress?: number;
-  completionRate?: number;
-  targetResponses?: number;
-  responsesByStatus?: { [key: string]: number };
-  routeDistribution?: { [key: string]: number };
-  pickupTimeDistribution?: { [key: string]: number };
+  availableRouteIds?: number[];  // ADD THIS
+  availableSlotIds?: number[];   // ADD THIS
 }
 
 @Injectable({
@@ -161,6 +120,8 @@ export class SurveyService {
   }
 
   exportSurveyResponses(surveyId: number): Observable<any> {
-    return this.http.get(`${this.baseUrl}/${surveyId}/export`);
+    return this.http.get(`${this.baseUrl}/${surveyId}/export`, { responseType: 'blob' });
   }
 }
+
+export type { StudentResponse, SurveyStatistics };

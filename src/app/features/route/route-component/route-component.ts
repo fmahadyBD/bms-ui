@@ -24,11 +24,12 @@ export class RouteComponent implements OnInit {
     busNo: '',
     routeName: '',
     routeLine: '',
+    startPoint: '',   // ADD THIS
+    endPoint: '',     // ADD THIS
     operatingDays: [],
     pickupPoints: []
   };
 
-  // Getter to maintain compatibility with HTML using 'routeForm'
   get routeForm() {
     return this.routeFormData;
   }
@@ -75,6 +76,8 @@ export class RouteComponent implements OnInit {
       busNo: '',
       routeName: '',
       routeLine: '',
+      startPoint: '',
+      endPoint: '',
       operatingDays: [],
       pickupPoints: []
     };
@@ -120,10 +123,17 @@ export class RouteComponent implements OnInit {
     this.routeFormData.pickupPoints.forEach((point, idx) => point.stopOrder = idx + 1);
   }
 
-  // This is the original save method
   saveRoute() {
     if (!this.routeFormData.busNo || !this.routeFormData.routeName) {
       this.showError('Please fill in all required fields');
+      return;
+    }
+    if (!this.routeFormData.startPoint) {
+      this.showError('Please enter start point');
+      return;
+    }
+    if (!this.routeFormData.endPoint) {
+      this.showError('Please enter end point');
       return;
     }
     if (this.routeFormData.operatingDays.length === 0) {
@@ -146,7 +156,6 @@ export class RouteComponent implements OnInit {
     });
   }
 
-  // ADD THIS METHOD - This is called by the validation form
   saveRouteWithValidation() {
     this.saveRoute();
   }
@@ -167,6 +176,8 @@ export class RouteComponent implements OnInit {
       busNo: route.busNo,
       routeName: route.routeName,
       routeLine: route.routeLine,
+      startPoint: route.startPoint || '',
+      endPoint: route.endPoint || '',
       operatingDays: [...route.operatingDays],
       pickupPoints: route.pickupPoints.map(pp => ({
         placeName: pp.placeName,
@@ -187,6 +198,14 @@ export class RouteComponent implements OnInit {
 
   updateRoute() {
     if (!this.selectedRoute) return;
+    if (!this.routeFormData.startPoint) {
+      this.showError('Please enter start point');
+      return;
+    }
+    if (!this.routeFormData.endPoint) {
+      this.showError('Please enter end point');
+      return;
+    }
     if (this.routeFormData.operatingDays.length === 0) {
       this.showError('Please select at least one operating day');
       return;

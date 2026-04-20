@@ -28,7 +28,7 @@
     <div *ngFor="let survey of surveys" class="survey-card">
       <div class="survey-card-header">
         <h3>{{ survey.title }}</h3>
-        <span class="survey-status" [class]="survey.status.toLowerCase()">
+        <span class="survey-status" [class]="getStatusClass(survey.status)">
           {{ survey.status }}
         </span>
       </div>
@@ -50,6 +50,14 @@
           <div class="meta-item">
             <span class="meta-label">Deadline:</span>
             <span>{{ survey.endDate | date:'MMM d, y' }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Routes:</span>
+            <span>{{ (survey.availableRoutes || []).length }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Time Slots:</span>
+            <span>{{ (survey.availableSlots || []).length }}</span>
           </div>
         </div>
       </div>
@@ -91,38 +99,33 @@
         </div>
         
         <form (ngSubmit)="submitSurvey()">
-          <!-- Bus Service Specific Fields -->
+          <!-- Route Selection Dropdown -->
           <div class="form-section">
-            <h3>Bus Service Information</h3>
-            
+            <h3>🚌 Select Your Route</h3>
             <div class="form-group">
-              <label>Boarding Point *</label>
-              <input type="text" 
-                     [(ngModel)]="boardingPoint" 
-                     name="boardingPoint"
-                     class="form-control" 
-                     placeholder="Enter your boarding point"
-                     required>
+              <label>Select Your Route *</label>
+              <select class="form-control" [(ngModel)]="selectedRouteId" name="selectedRouteId" (change)="onRouteChange()" required>
+                <option [value]="null">-- Select a route --</option>
+                <option *ngFor="let route of availableRoutes" [value]="route.id">
+                  {{ route.routeName }} - Bus: {{ route.busNo }} ({{ route.startPoint }} → {{ route.endPoint }})
+                </option>
+              </select>
+              <small class="form-text" *ngIf="availableRoutes.length === 0">No routes available for this survey.</small>
             </div>
-            
+          </div>
+          
+          <!-- Time Slot Selection Dropdown -->
+          <div class="form-section">
+            <h3>⏰ Select Your Time Slot</h3>
             <div class="form-group">
-              <label>Drop Point *</label>
-              <input type="text" 
-                     [(ngModel)]="dropPoint" 
-                     name="dropPoint"
-                     class="form-control" 
-                     placeholder="Enter your drop point"
-                     required>
-            </div>
-            
-            <div class="form-group">
-              <label>Preferred Pickup Time *</label>
-              <input type="time" 
-                     [(ngModel)]="pickupTime" 
-                     name="pickupTime"
-                     class="form-control" 
-                     required>
-              <small class="form-text">Please select your preferred pickup time</small>
+              <label>Select Your Time Slot *</label>
+              <select class="form-control" [(ngModel)]="selectedSlotId" name="selectedSlotId" (change)="onSlotChange()" required>
+                <option [value]="null">-- Select a time slot --</option>
+                <option *ngFor="let slot of availableSlots" [value]="slot.id">
+                  {{ slot.slotName }} - {{ slot.pickupTime }} ({{ slot.fromLocation }} → {{ slot.toLocation }})
+                </option>
+              </select>
+              <small class="form-text" *ngIf="availableSlots.length === 0">No time slots available for this survey.</small>
             </div>
           </div>
           
@@ -180,15 +183,23 @@
                   </option>
                 </select>
                 
-                <!-- RATING (1-5 stars) -->
-                <div *ngSwitchCase="'RATING'" class="rating-group">
-                  <label *ngFor="let rating of [1,2,3,4,5]" class="rating-label">
+                <!-- BOOLEAN (Yes/No) -->
+                <div *ngSwitchCase="'BOOLEAN'" class="radio-group">
+                  <label class="radio-label">
                     <input type="radio" 
                            [(ngModel)]="responses[i]" 
                            [name]="'question_' + i"
-                           [value]="rating"
+                           [value]="true"
                            [required]="question.required">
-                    {{ rating }} ★
+                    Yes
+                  </label>
+                  <label class="radio-label">
+                    <input type="radio" 
+                           [(ngModel)]="responses[i]" 
+                           [name]="'question_' + i"
+                           [value]="false"
+                           [required]="question.required">
+                    No
                   </label>
                 </div>
               </div>

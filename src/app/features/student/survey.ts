@@ -1,4 +1,4 @@
-// src/app/features/survey/survey.service.ts
+// src/app/features/student/survey/survey.service.ts
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -6,40 +6,32 @@ import { Observable } from 'rxjs';
 export interface Question {
   questionText: string;
   questionType: string;
-  options?: string | string[] | null;  // Allow null
+  options?: string | string[] | null;
   displayOrder: number;
   required: boolean;
 }
 
-export interface SurveyRequest {
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  academicYear: string;
-  semester: string;
-  targetResponses: number;
-  status: string;
-  questions: Question[];
+export interface RouteBasicResponse {
+  id: number;
+  routeName: string;
+  busNo: string;
+  startPoint: string;
+  endPoint: string;
 }
 
-// export interface SurveyResponse {
-//   id: number;
-//   title: string;
-//   description: string;
-//   startDate: string;
-//   endDate: string;
-//   academicYear: string;
-//   semester: string;
-//   targetResponses: number;
-//   status: string;
-//   questions: Question[];
-//   createdAt: string;
-//   updatedAt: string;
-// }
+export interface BusSlotResponse {
+  id: number;
+  slotName: string;
+  pickupTime: string;
+  dropTime: string;
+  fromLocation: string;
+  toLocation: string;
+  status: string;
+  description?: string;
+  isRegular: boolean;
+  regularDays?: string;
+}
 
-
-// survey.service.ts - Update the SurveyResponse interface
 export interface SurveyResponse {
   id: number;
   title: string;
@@ -51,14 +43,15 @@ export interface SurveyResponse {
   targetResponses: number;
   status: string;
   isActive?: boolean;
-  questions?: Question[];  // Make this optional with ?
+  questions?: Question[];
+  availableRoutes?: RouteBasicResponse[];
+  availableSlots?: BusSlotResponse[];
   createdAt: string;
   updatedAt: string;
   createdBy?: number;
   updatedBy?: number;
   totalResponses?: number;
 }
-
 
 export interface StudentResponse {
   id: number;
@@ -98,60 +91,15 @@ export class SurveyService {
 
   constructor(private http: HttpClient) {}
 
-  createSurvey(surveyData: SurveyRequest): Observable<SurveyResponse> {
-    return this.http.post<SurveyResponse>(this.baseUrl, surveyData);
-  }
-
-  getAllSurveys(): Observable<SurveyResponse[]> {
-    return this.http.get<SurveyResponse[]>(this.baseUrl);
+  getActiveSurveys(): Observable<SurveyResponse[]> {
+    return this.http.get<SurveyResponse[]>(`${this.baseUrl}/active`);
   }
 
   getSurveyById(id: number): Observable<SurveyResponse> {
     return this.http.get<SurveyResponse>(`${this.baseUrl}/${id}`);
   }
 
-  getActiveSurveys(): Observable<SurveyResponse[]> {
-    return this.http.get<SurveyResponse[]>(`${this.baseUrl}/active`);
-  }
-
-  getCurrentSurveys(): Observable<SurveyResponse[]> {
-    return this.http.get<SurveyResponse[]>(`${this.baseUrl}/current`);
-  }
-
-  updateSurveyStatus(id: number, status: string): Observable<SurveyResponse> {
-    const params = new HttpParams().set('status', status);
-    return this.http.patch<SurveyResponse>(`${this.baseUrl}/${id}/status`, null, { params });
-  }
-
-  updateSurvey(id: number, surveyData: SurveyRequest): Observable<SurveyResponse> {
-    return this.http.put<SurveyResponse>(`${this.baseUrl}/${id}`, surveyData);
-  }
-
-  deleteSurvey(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
-  }
-
   submitResponse(surveyId: number, response: any): Observable<StudentResponse> {
     return this.http.post<StudentResponse>(`${this.baseUrl}/${surveyId}/responses`, response);
-  }
-
-  getSurveyResponses(surveyId: number): Observable<StudentResponse[]> {
-    return this.http.get<StudentResponse[]>(`${this.baseUrl}/${surveyId}/responses`);
-  }
-
-  updateResponseStatus(responseId: number, status: string, reason?: string): Observable<StudentResponse> {
-    let params = new HttpParams().set('status', status);
-    if (reason) {
-      params = params.set('reason', reason);
-    }
-    return this.http.patch<StudentResponse>(`${this.baseUrl}/responses/${responseId}/status`, null, { params });
-  }
-
-  getSurveyStatistics(surveyId: number): Observable<SurveyStatistics> {
-    return this.http.get<SurveyStatistics>(`${this.baseUrl}/${surveyId}/statistics`);
-  }
-
-  exportSurveyResponses(surveyId: number): Observable<any> {
-    return this.http.get(`${this.baseUrl}/${surveyId}/export`);
   }
 }

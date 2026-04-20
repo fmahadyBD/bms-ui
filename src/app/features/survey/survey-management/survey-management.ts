@@ -2,7 +2,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SurveyService, SurveyResponse, SurveyRequest, StudentResponse, SurveyStatistics } from '../survey';
+import { SurveyService, SurveyResponse, SurveyRequest, StudentResponse, SurveyStatistics } from '../survey.service';
+import { RouteService, RouteResponse } from '../../route/route.service';
+import { BusSlotService, BusSlot } from '../../bus-slot/bus-slot.service';
 
 @Component({
   selector: 'app-survey-management',
@@ -35,7 +37,9 @@ export class SurveyManagementComponent implements OnInit {
     semester: 'Spring',
     targetResponses: 100,
     status: 'DRAFT',
-    questions: []
+    questions: [],
+    availableRouteIds: [],
+    availableSlotIds: []
   };
 
   // Question management properties
@@ -73,11 +77,23 @@ export class SurveyManagementComponent implements OnInit {
     additionalNotes: ''
   };
 
-  constructor(private surveyService: SurveyService) {}
+  // Route and Slot properties
+  availableRoutes: RouteResponse[] = [];
+  availableSlots: BusSlot[] = [];
+  selectedRouteIds: number[] = [];
+  selectedSlotIds: number[] = [];
+
+  constructor(
+    private surveyService: SurveyService,
+    private routeService: RouteService,
+    private slotService: BusSlotService
+  ) {}
 
   ngOnInit() {
     this.generateAcademicYears();
     this.loadSurveys();
+    this.loadAvailableRoutes();
+    this.loadAvailableSlots();
   }
 
   generateAcademicYears() {
@@ -88,6 +104,58 @@ export class SurveyManagementComponent implements OnInit {
       const endYear = startYear + 1;
       this.academicYears.push(`${startYear}-${endYear}`);
     }
+  }
+
+  loadAvailableRoutes() {
+    this.routeService.getAllRoutes().subscribe({
+      next: (routes) => {
+        this.availableRoutes = routes;
+        console.log('Routes loaded:', routes);
+      },
+      error: (error) => {
+        console.error('Error loading routes:', error);
+      }
+    });
+  }
+
+  loadAvailableSlots() {
+    this.slotService.getAllSlots().subscribe({
+      next: (slots) => {
+        this.availableSlots = slots;
+        console.log('Slots loaded:', slots);
+      },
+      error: (error) => {
+        console.error('Error loading slots:', error);
+      }
+    });
+  }
+
+  toggleRouteSelection(event: any, routeId: number) {
+    if (event.target.checked) {
+      this.selectedRouteIds.push(routeId);
+    } else {
+      this.selectedRouteIds = this.selectedRouteIds.filter(id => id !== routeId);
+    }
+    this.surveyForm.availableRouteIds = [...this.selectedRouteIds];
+    console.log('Selected routes:', this.selectedRouteIds);
+  }
+
+  toggleSlotSelection(event: any, slotId: number) {
+    if (event.target.checked) {
+      this.selectedSlotIds.push(slotId);
+    } else {
+      this.selectedSlotIds = this.selectedSlotIds.filter(id => id !== slotId);
+    }
+    this.surveyForm.availableSlotIds = [...this.selectedSlotIds];
+    console.log('Selected slots:', this.selectedSlotIds);
+  }
+
+  isRouteSelected(routeId: number): boolean {
+    return this.selectedRouteIds.includes(routeId);
+  }
+
+  isSlotSelected(slotId: number): boolean {
+    return this.selectedSlotIds.includes(slotId);
   }
 
   getOptionsArray(options: string | string[] | null | undefined): string[] {
@@ -155,8 +223,12 @@ export class SurveyManagementComponent implements OnInit {
       semester: 'Spring',
       targetResponses: 100,
       status: 'DRAFT',
-      questions: []
+      questions: [],
+      availableRouteIds: [],
+      availableSlotIds: []
     };
+    this.selectedRouteIds = [];
+    this.selectedSlotIds = [];
     this.resetNewQuestion();
     this.showAddModal = true;
   }
@@ -210,7 +282,9 @@ export class SurveyManagementComponent implements OnInit {
       semester: this.surveyForm.semester,
       targetResponses: this.surveyForm.targetResponses || 100,
       status: this.surveyForm.status,
-      questions: processedQuestions
+      questions: processedQuestions,
+      availableRouteIds: this.selectedRouteIds,
+      availableSlotIds: this.selectedSlotIds
     };
 
     console.log('Sending survey data:', JSON.stringify(surveyData, null, 2));
@@ -247,7 +321,6 @@ export class SurveyManagementComponent implements OnInit {
   editSurvey(survey: SurveyResponse) {
     this.selectedSurvey = survey;
     
-    // FIXED: Add null check for survey.questions
     const questions = (survey.questions || []).map(q => {
       const question: any = {
         questionText: q.questionText,
@@ -271,6 +344,10 @@ export class SurveyManagementComponent implements OnInit {
       return question;
     });
     
+    // FIXED: Handle undefined values with fallback empty arrays
+    const availableRouteIds = survey.availableRoutes?.map(r => r.id) || [];
+    const availableSlotIds = survey.availableSlots?.map(s => s.id) || [];
+    
     this.surveyForm = {
       title: survey.title,
       description: survey.description,
@@ -280,8 +357,13 @@ export class SurveyManagementComponent implements OnInit {
       semester: survey.semester,
       targetResponses: survey.targetResponses,
       status: survey.status,
-      questions: questions
+      questions: questions,
+      availableRouteIds: availableRouteIds,
+      availableSlotIds: availableSlotIds
     };
+    
+    this.selectedRouteIds = [...availableRouteIds];
+    this.selectedSlotIds = [...availableSlotIds];
     this.showEditModal = true;
   }
 
@@ -327,7 +409,9 @@ export class SurveyManagementComponent implements OnInit {
       semester: this.surveyForm.semester,
       targetResponses: this.surveyForm.targetResponses || 100,
       status: this.surveyForm.status,
-      questions: processedQuestions
+      questions: processedQuestions,
+      availableRouteIds: this.selectedRouteIds,
+      availableSlotIds: this.selectedSlotIds
     };
 
     console.log('Updating survey data:', JSON.stringify(surveyData, null, 2));
@@ -368,7 +452,6 @@ export class SurveyManagementComponent implements OnInit {
   }
 
   viewDetails(survey: SurveyResponse) {
-    // FIXED: Add null check for survey.questions
     const questions = (survey.questions || []).map(q => {
       const question: any = { ...q };
       if (q.options && typeof q.options === 'string') {
