@@ -15,32 +15,32 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: '', redirectTo: 'overview', pathMatch: 'full' },  // Make sure this line is NOT commented
-      { 
-        path: 'overview', 
+      {
+        path: 'overview',
         loadComponent: () => import('./features/student/overview-component.ts/overview-component.ts').then(m => m.OverviewComponent)
       },
-      { 
-        path: 'new-bus-request', 
+      {
+        path: 'new-bus-request',
         loadComponent: () => import('./features/student/new-bus-request.ts/new-bus-request.ts').then(m => m.NewBusRequestComponent)
       },
-      { 
-        path: 'change-password', 
+      {
+        path: 'change-password',
         loadComponent: () => import('./features/dashboard/components/change-password/change-password').then(m => m.ChangePasswordComponent)
       },
-      { 
-        path: 'survey', 
+      {
+        path: 'survey',
         loadComponent: () => import('./features/student/survey-component/survey-component').then(m => m.SurveyComponent)
       },
-      { 
-        path: 'profile', 
+      {
+        path: 'profile',
         loadComponent: () => import('./features/student/profile-component/profile-component').then(m => m.ProfileComponent)
       },
-      { 
-        path: 'settings', 
+      {
+        path: 'settings',
         loadComponent: () => import('./features/student/settings-component/settings-component').then(m => m.SettingsComponent)
       },
-      { 
-        path: 'my-route', 
+      {
+        path: 'my-route',
         loadComponent: () => import('./features/student/my-route-component/my-route-component').then(m => m.MyRouteComponent)
       }
     ]
@@ -51,7 +51,8 @@ export const routes: Routes = [
     canActivate: [authGuard, roleGuard],
     data: { role: 'MANAGER' },
     children: [
-      { path: '', redirectTo: 'students', pathMatch: 'full' },
+      // { path: '', redirectTo: 'students', pathMatch: 'full' },
+      { path: '', loadComponent: () => import('./features/survey-responses.component/survey-responses.component').then(m => m.SurveyResponsesComponent) },
       { path: 'students', loadComponent: () => import('./features/dashboard/components/all-student-component/all-student-component').then(m => m.AllStudentComponent) },
       { path: 'buses', loadComponent: () => import('./features/bus/bus-component/bus-component').then(m => m.BusComponent) },
       { path: 'routes', loadComponent: () => import('./features/route/route-component/route-component').then(m => m.RouteComponent) },

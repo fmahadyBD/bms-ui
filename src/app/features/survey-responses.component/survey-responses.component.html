@@ -1,0 +1,251 @@
+<div class="responses-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <span class="title-icon">📊</span>
+      <h1>Survey Responses Manager</h1>
+    </div>
+  </div>
+
+  <!-- Survey Selection -->
+  <div class="survey-selector card">
+    <div class="card-body">
+      <label class="form-label fw-bold">Select Survey</label>
+      <select class="form-select" (change)="onSurveySelect($event)">
+        <option value="">-- Choose a Survey --</option>
+        <option *ngFor="let survey of surveys" [value]="survey.id">
+          {{survey.title}} ({{survey.startDate}} to {{survey.endDate}})
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner"></div>
+    <p>Loading responses...</p>
+  </div>
+
+  <!-- Statistics Dashboard -->
+  <div *ngIf="selectedSurvey && !loading && responses.length > 0" class="stats-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">{{statistics.totalResponses}}</div>
+        <div class="stat-label">Total Responses</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{statistics.uniqueStudents}}</div>
+        <div class="stat-label">Unique Students</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{(statistics.totalResponses / (selectedSurvey.questions?.length || 1)).toFixed(1)}}</div>
+        <div class="stat-label">Avg. Response Rate</div>
+      </div>
+    </div>
+
+    <!-- Distribution Charts -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5>Route Distribution</h5>
+          </div>
+          <div class="card-body">
+            <div *ngFor="let route of routes" class="distribution-item">
+              <div class="distribution-label">{{route.routeName}}</div>
+              <div class="progress-bar">
+                <div class="progress-fill" 
+                     [style.width.%]="(statistics.routeDistribution[route.routeName + ' (' + route.busNo + ')'] || 0) / statistics.totalResponses * 100">
+                  {{statistics.routeDistribution[route.routeName + ' (' + route.busNo + ')'] || 0}}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5>Slot Distribution</h5>
+          </div>
+          <div class="card-body">
+            <div *ngFor="let slot of slots" class="distribution-item">
+              <div class="distribution-label">{{slot.slotName}}</div>
+              <div class="progress-bar">
+                <div class="progress-fill" 
+                     [style.width.%]="(statistics.slotDistribution[slot.slotName + ' - ' + slot.pickupTime] || 0) / statistics.totalResponses * 100">
+                  {{statistics.slotDistribution[slot.slotName + ' - ' + slot.pickupTime] || 0}}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div *ngIf="selectedSurvey && !loading && responses.length > 0" class="filters-card card">
+    <div class="card-body">
+      <h5>Filters</h5>
+      <div class="row">
+        <div class="col-md-4">
+          <label class="form-label">Search</label>
+          <input type="text" class="form-control" [(ngModel)]="searchTerm" 
+                 placeholder="Search by name or ID" (input)="applyFilters()">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Filter by Route</label>
+          <select class="form-select" [(ngModel)]="selectedRouteFilter" (change)="applyFilters()">
+            <option [ngValue]="null">All Routes</option>
+            <option *ngFor="let route of routes" [ngValue]="route.id">
+              {{route.routeName}}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Filter by Slot</label>
+          <select class="form-select" [(ngModel)]="selectedSlotFilter" (change)="applyFilters()">
+            <option [ngValue]="null">All Slots</option>
+            <option *ngFor="let slot of slots" [ngValue]="slot.id">
+              {{slot.slotName}}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">&nbsp;</label>
+          <button class="btn btn-secondary w-100" (click)="clearFilters()">Clear Filters</button>
+        </div>
+      </div>
+      <div class="row mt-2">
+        <div class="col-md-4">
+          <label class="form-label">Date From</label>
+          <input type="date" class="form-control" [(ngModel)]="dateFrom" (change)="applyFilters()">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Date To</label>
+          <input type="date" class="form-control" [(ngModel)]="dateTo" (change)="applyFilters()">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Export Format</label>
+          <div class="d-flex gap-2">
+            <select class="form-select" [(ngModel)]="exportFormat">
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+            </select>
+            <button class="btn btn-success" (click)="exportData()">📥 Export</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Responses Table -->
+  <div *ngIf="selectedSurvey && !loading && filteredResponses.length > 0" class="responses-table-container card">
+    <div class="card-header">
+      <h5>Responses ({{filteredResponses.length}} of {{responses.length}})</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="responses-table">
+          <thead>
+            <tr>
+              <th>Student ID</th>
+              <th>Student Name</th>
+              <th>Contact</th>
+              <th>Selected Route</th>
+              <th>Selected Slot</th>
+              <th>Submitted Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let response of filteredResponses">
+              <td><strong>{{response.studentId}}</strong></td>
+              <td>{{response.studentName}}</td>
+              <td>
+                <small>{{response.studentEmail}}<br>{{response.studentPhone}}</small>
+              </td>
+              <td>
+                <span class="badge bg-info">{{response.routeName}}</span>
+              </td>
+              <td>
+                <span class="badge bg-success">{{response.slotName}}</span>
+              </td>
+              <td>{{response.submittedAt | date:'medium'}}</td>
+              <td>
+                <button class="btn btn-sm btn-primary" (click)="viewResponseDetails(response)">
+                  👁️ View Details
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Responses Message -->
+  <div *ngIf="selectedSurvey && !loading && responses.length === 0" class="empty-state">
+    <div class="empty-icon">📭</div>
+    <h3>No Responses Yet</h3>
+    <p>No students have responded to this survey yet.</p>
+  </div>
+
+  <!-- Response Details Modal -->
+  <div *ngIf="showResponseDetails && selectedResponse" class="modal-overlay" (click)="closeResponseDetails()">
+    <div class="modal-container modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Response Details - {{selectedResponse.studentName}}</h3>
+        <button class="modal-close" (click)="closeResponseDetails()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="details-section">
+          <h4>Student Information</h4>
+          <div class="detail-row">
+            <label>Student ID:</label>
+            <span>{{selectedResponse.studentId}}</span>
+          </div>
+          <div class="detail-row">
+            <label>Name:</label>
+            <span>{{selectedResponse.studentName}}</span>
+          </div>
+          <div class="detail-row">
+            <label>Email:</label>
+            <span>{{selectedResponse.studentEmail || 'N/A'}}</span>
+          </div>
+          <div class="detail-row">
+            <label>Phone:</label>
+            <span>{{selectedResponse.studentPhone || 'N/A'}}</span>
+          </div>
+        </div>
+
+        <div class="details-section">
+          <h4>Transport Selection</h4>
+          <div class="detail-row">
+            <label>Selected Route:</label>
+            <span class="badge bg-info">{{selectedResponse.routeName}}</span>
+          </div>
+          <div class="detail-row">
+            <label>Selected Slot:</label>
+            <span class="badge bg-success">{{selectedResponse.slotName}}</span>
+          </div>
+        </div>
+
+        <div class="details-section">
+          <h4>Survey Answers</h4>
+          <div *ngFor="let question of selectedSurvey?.questions; let i=index" class="answer-item">
+            <div class="question-text">{{i+1}}. {{question.questionText}}</div>
+            <div class="answer-text">
+              <strong>Answer:</strong> 
+              {{getAnswerValue(question.id, i)}}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="closeResponseDetails()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

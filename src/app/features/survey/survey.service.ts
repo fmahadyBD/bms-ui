@@ -1,27 +1,24 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Question, StudentResponse, SurveyStatistics } from '../student/survey';
-// survey.ts - Add these interfaces and update SurveyResponse
-export interface RouteBasicResponse {
-  id: number;
-  routeName: string;
-  busNo: string;
-  startPoint: string;
-  endPoint: string;
+
+export interface Question {
+  id?: number;
+  questionText: string;
+  questionType: 'TEXT' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE';
+  options?: string;
+  displayOrder: number;
+  required: boolean;
 }
 
-export interface BusSlotResponse {
-  id: number;
-  slotName: string;
-  pickupTime: string;
-  dropTime: string;
-  fromLocation: string;
-  toLocation: string;
-  status: string;
-  description?: string;
-  isRegular: boolean;
-  regularDays?: string;
+export interface Survey {
+  id?: number;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  active?: boolean;
+  questions: Question[];
 }
 
 export interface SurveyResponse {
@@ -30,44 +27,71 @@ export interface SurveyResponse {
   description: string;
   startDate: string;
   endDate: string;
-  academicYear: string;
-  semester: string;
-  targetResponses: number;
-  status: string;
-  isActive?: boolean;
-  questions?: Question[];
-  availableRoutes?: RouteBasicResponse[];  // ADD THIS
-  availableSlots?: BusSlotResponse[];      // ADD THIS
-  createdAt: string;
-  updatedAt: string;
-  createdBy?: number;
-  updatedBy?: number;
-}
-
-export interface SurveyRequest {
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  academicYear: string;
-  semester: string;
-  targetResponses: number;
-  status: string;
+  active: boolean;
   questions: Question[];
-  availableRouteIds?: number[];  // ADD THIS
-  availableSlotIds?: number[];   // ADD THIS
+  createdAt?: string;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+
+export interface SurveyResponseData {
+  id: number;
+  surveyId: number;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  studentPhone: string;
+  selectedRouteId: number;
+  selectedSlotId: number;
+  responseData: string;
+  submittedAt: string;
+}
+
+export interface Route {
+  id: number;
+  routeName: string;
+  busNo: string;
+  startPoint: string;
+  endPoint: string;
+}
+
+export interface Slot {
+  id: number;
+  slotName: string;
+  pickupTime: string;
+  dropTime: string;
+  fromLocation: string;
+  toLocation: string;
+}
+
+
+
+export interface SubmissionData {
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  studentPhone: string;
+  selectedRouteId: number;
+  selectedSlotId: number;
+  answers: { [key: string]: any };
+}
+
+@Injectable({ providedIn: 'root' })
 export class SurveyService {
   private baseUrl = 'http://localhost:8080/api/v1/surveys';
 
   constructor(private http: HttpClient) {}
 
-  createSurvey(surveyData: SurveyRequest): Observable<SurveyResponse> {
-    return this.http.post<SurveyResponse>(this.baseUrl, surveyData);
+  // Manager endpoints
+  createSurvey(data: Survey): Observable<SurveyResponse> {
+    return this.http.post<SurveyResponse>(this.baseUrl, data);
+  }
+
+  updateSurvey(id: number, data: Survey): Observable<SurveyResponse> {
+    return this.http.put<SurveyResponse>(`${this.baseUrl}/${id}`, data);
+  }
+
+  deleteSurvey(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 
   getAllSurveys(): Observable<SurveyResponse[]> {
@@ -78,50 +102,20 @@ export class SurveyService {
     return this.http.get<SurveyResponse>(`${this.baseUrl}/${id}`);
   }
 
+  // Student endpoints
   getActiveSurveys(): Observable<SurveyResponse[]> {
     return this.http.get<SurveyResponse[]>(`${this.baseUrl}/active`);
   }
 
-  getCurrentSurveys(): Observable<SurveyResponse[]> {
-    return this.http.get<SurveyResponse[]>(`${this.baseUrl}/current`);
+  submitResponse(surveyId: number, data: SubmissionData): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${surveyId}/submit`, data);
   }
 
-  updateSurveyStatus(id: number, status: string): Observable<SurveyResponse> {
-    const params = new HttpParams().set('status', status);
-    return this.http.patch<SurveyResponse>(`${this.baseUrl}/${id}/status`, null, { params });
-  }
-
-  updateSurvey(id: number, surveyData: SurveyRequest): Observable<SurveyResponse> {
-    return this.http.put<SurveyResponse>(`${this.baseUrl}/${id}`, surveyData);
-  }
-
-  deleteSurvey(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`);
-  }
-
-  submitResponse(surveyId: number, response: any): Observable<StudentResponse> {
-    return this.http.post<StudentResponse>(`${this.baseUrl}/${surveyId}/responses`, response);
-  }
-
-  getSurveyResponses(surveyId: number): Observable<StudentResponse[]> {
-    return this.http.get<StudentResponse[]>(`${this.baseUrl}/${surveyId}/responses`);
-  }
-
-  updateResponseStatus(responseId: number, status: string, reason?: string): Observable<StudentResponse> {
-    let params = new HttpParams().set('status', status);
-    if (reason) {
-      params = params.set('reason', reason);
-    }
-    return this.http.patch<StudentResponse>(`${this.baseUrl}/responses/${responseId}/status`, null, { params });
-  }
-
-  getSurveyStatistics(surveyId: number): Observable<SurveyStatistics> {
-    return this.http.get<SurveyStatistics>(`${this.baseUrl}/${surveyId}/statistics`);
-  }
-
-  exportSurveyResponses(surveyId: number): Observable<any> {
-    return this.http.get(`${this.baseUrl}/${surveyId}/export`, { responseType: 'blob' });
-  }
+  getSurveyResponses(surveyId: number): Observable<SurveyResponseData[]> {
+  return this.http.get<SurveyResponseData[]>(`${this.baseUrl}/${surveyId}/responses`);
 }
 
-export type { StudentResponse, SurveyStatistics };
+getAllResponses(): Observable<SurveyResponseData[]> {
+  return this.http.get<SurveyResponseData[]>(`${this.baseUrl}/all-responses`);
+}
+}

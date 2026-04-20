@@ -1,229 +1,166 @@
-<div class="survey-container">
-  <div class="survey-header">
-    <h1>📋 Bus Service Surveys</h1>
-    <p>Participate in ongoing surveys to help us improve our bus services</p>
-  </div>
+<div class="container mt-4">
+  <h2 class="mb-4">Transport Surveys</h2>
   
-  <div *ngIf="errorMessage" class="alert alert-error">
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
     {{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
   </div>
   
-  <div *ngIf="!studentData && !errorMessage" class="loading-state">
-    <div class="spinner"></div>
-    <p>Loading your information...</p>
+  <!-- Loading Spinner -->
+  <div *ngIf="loading" class="text-center">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
   </div>
   
-  <div *ngIf="loading && studentData" class="loading-state">
-    <div class="spinner"></div>
-    <p>Loading surveys...</p>
-  </div>
-  
-  <div *ngIf="!loading && studentData && surveys.length === 0 && !showSurveyForm" class="empty-state">
-    <div class="empty-icon">📭</div>
-    <h3>No Active Surveys</h3>
-    <p>There are no active surveys available at the moment. Please check back later.</p>
-  </div>
-  
-  <div *ngIf="!loading && studentData && surveys.length > 0 && !showSurveyForm" class="surveys-grid">
-    <div *ngFor="let survey of surveys" class="survey-card">
-      <div class="survey-card-header">
-        <h3>{{ survey.title }}</h3>
-        <span class="survey-status" [class]="getStatusClass(survey.status)">
-          {{ survey.status }}
-        </span>
-      </div>
-      <div class="survey-card-body">
-        <p>{{ survey.description }}</p>
-        <div class="survey-meta">
-          <div class="meta-item">
-            <span class="meta-label">Academic Year:</span>
-            <span>{{ survey.academicYear }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Semester:</span>
-            <span>{{ survey.semester }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Questions:</span>
-            <span>{{ (survey.questions || []).length }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Deadline:</span>
-            <span>{{ survey.endDate | date:'MMM d, y' }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Routes:</span>
-            <span>{{ (survey.availableRoutes || []).length }}</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Time Slots:</span>
-            <span>{{ (survey.availableSlots || []).length }}</span>
-          </div>
+  <!-- List of Active Surveys -->
+  <div *ngIf="!loading && !showSurveyForm" class="row">
+    <div class="col-md-6 col-lg-4 mb-4" *ngFor="let survey of surveys">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title text-primary">{{survey.title}}</h5>
+          <p class="card-text">{{survey.description}}</p>
+          <p class="text-muted small">
+            <strong>Valid:</strong> {{survey.startDate}} to {{survey.endDate}}
+          </p>
+         <p class="text-muted small" *ngIf="survey.questions && survey.questions.length">
+            <strong>Questions:</strong> {{survey.questions.length}}
+          </p>
+        </div>
+        <div class="card-footer bg-transparent">
+          <button class="btn btn-primary w-100" (click)="takeSurvey(survey)">
+            Take Survey
+          </button>
         </div>
       </div>
-      <div class="survey-card-footer">
-        <button class="btn-primary" (click)="takeSurvey(survey)">Take Survey</button>
+    </div>
+    
+    <!-- No Surveys Message -->
+    <div *ngIf="surveys.length === 0 && !loading" class="col-12">
+      <div class="alert alert-info text-center">
+        No active surveys available at the moment.
       </div>
     </div>
   </div>
   
-  <!-- Survey Form Modal -->
-  <div *ngIf="showSurveyForm && selectedSurvey && studentData" class="modal-overlay" (click)="closeSurvey()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>{{ selectedSurvey.title }}</h2>
-        <button class="close-btn" (click)="closeSurvey()">×</button>
-      </div>
-      <div class="modal-body">
-        <p class="survey-description">{{ selectedSurvey.description }}</p>
-        
-        <!-- Display student info for confirmation -->
-        <div class="student-info-card">
-          <h4>Student Information</h4>
-          <div class="info-row">
-            <span class="info-label">Name:</span>
-            <span>{{ studentData.name }}</span>
+  <!-- Survey Response Form -->
+  <div *ngIf="showSurveyForm && selectedSurvey" class="card shadow">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h4 class="mb-0">{{selectedSurvey.title}}</h4>
+      <button class="btn btn-light btn-sm" (click)="closeSurvey()">Cancel</button>
+    </div>
+    <div class="card-body">
+      <!-- Student Info Section -->
+      <div class="mb-4 p-3 bg-light rounded">
+        <h5>Student Information</h5>
+        <div class="row">
+          <div class="col-md-6 mb-2">
+            <label class="form-label fw-bold">Student ID *</label>
+            <input type="text" class="form-control" [(ngModel)]="studentData.studentId" readonly>
           </div>
-          <div class="info-row">
-            <span class="info-label">Student ID:</span>
-            <span>{{ studentData.studentId }}</span>
+          <div class="col-md-6 mb-2">
+            <label class="form-label fw-bold">Student Name *</label>
+            <input type="text" class="form-control" [(ngModel)]="studentData.studentName" readonly>
           </div>
-          <div class="info-row">
-            <span class="info-label">Department:</span>
-            <span>{{ studentData.department }}</span>
+          <div class="col-md-6 mb-2">
+            <label class="form-label fw-bold">Email</label>
+            <input type="email" class="form-control" [(ngModel)]="studentData.studentEmail">
           </div>
-          <div class="info-row">
-            <span class="info-label">Batch:</span>
-            <span>{{ studentData.batch }}</span>
+          <div class="col-md-6 mb-2">
+            <label class="form-label fw-bold">Phone</label>
+            <input type="text" class="form-control" [(ngModel)]="studentData.studentPhone">
           </div>
         </div>
-        
-        <form (ngSubmit)="submitSurvey()">
-          <!-- Route Selection Dropdown -->
-          <div class="form-section">
-            <h3>🚌 Select Your Route</h3>
-            <div class="form-group">
-              <label>Select Your Route *</label>
-              <select class="form-control" [(ngModel)]="selectedRouteId" name="selectedRouteId" (change)="onRouteChange()" required>
-                <option [value]="null">-- Select a route --</option>
-                <option *ngFor="let route of availableRoutes" [value]="route.id">
-                  {{ route.routeName }} - Bus: {{ route.busNo }} ({{ route.startPoint }} → {{ route.endPoint }})
-                </option>
-              </select>
-              <small class="form-text" *ngIf="availableRoutes.length === 0">No routes available for this survey.</small>
+      </div>
+      
+      <!-- Route Selection Dropdown -->
+      <div class="mb-4 p-3 border rounded">
+        <h5>Transport Selection</h5>
+        <div class="row">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Select Route *</label>
+            <select class="form-select" [(ngModel)]="selectedRouteId" (change)="onRouteChange()">
+              <option [ngValue]="null">-- Select a Route --</option>
+              <option *ngFor="let route of routes" [ngValue]="route.id">
+                {{route.routeName}} ({{route.busNo}}) - {{route.startPoint}} to {{route.endPoint}}
+              </option>
+            </select>
+            <div *ngIf="loadingRoutes" class="small text-muted mt-1">
+              <span class="spinner-border spinner-border-sm me-1"></span> Loading routes...
             </div>
           </div>
           
-          <!-- Time Slot Selection Dropdown -->
-          <div class="form-section">
-            <h3>⏰ Select Your Time Slot</h3>
-            <div class="form-group">
-              <label>Select Your Time Slot *</label>
-              <select class="form-control" [(ngModel)]="selectedSlotId" name="selectedSlotId" (change)="onSlotChange()" required>
-                <option [value]="null">-- Select a time slot --</option>
-                <option *ngFor="let slot of availableSlots" [value]="slot.id">
-                  {{ slot.slotName }} - {{ slot.pickupTime }} ({{ slot.fromLocation }} → {{ slot.toLocation }})
-                </option>
-              </select>
-              <small class="form-text" *ngIf="availableSlots.length === 0">No time slots available for this survey.</small>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Select Time Slot *</label>
+            <select class="form-select" [(ngModel)]="selectedSlotId">
+              <option [ngValue]="null">-- Select a Time Slot --</option>
+              <option *ngFor="let slot of (filteredSlots.length ? filteredSlots : slots)" [ngValue]="slot.id">
+                {{slot.slotName}} - {{slot.pickupTime}} to {{slot.dropTime}}
+                <span *ngIf="slot.fromLocation && slot.toLocation">
+                  ({{slot.fromLocation}} → {{slot.toLocation}})
+                </span>
+              </option>
+            </select>
+            <div *ngIf="loadingSlots" class="small text-muted mt-1">
+              <span class="spinner-border spinner-border-sm me-1"></span> Loading slots...
+            </div>
+            <div *ngIf="selectedRouteId && filteredSlots.length === 0 && !loadingSlots" class="small text-warning mt-1">
+              No slots available for this route
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Survey Questions -->
+      <div class="mb-4">
+        <h5>Survey Questions</h5>
+        <div *ngFor="let question of selectedSurvey.questions; let i=index" class="mb-3 p-3 border rounded">
+          <label class="form-label fw-bold">
+            {{i+1}}. {{question.questionText}}
+            <span *ngIf="question.required" class="text-danger">*</span>
+          </label>
+          
+          <!-- Text Input -->
+          <input *ngIf="question.questionType === 'TEXT'" 
+                 type="text" 
+                 class="form-control" 
+                 [(ngModel)]="answers[i]"
+                 [required]="question.required">
+          
+          <!-- Single Choice (Radio) -->
+          <div *ngIf="question.questionType === 'SINGLE_CHOICE'">
+            <div *ngFor="let opt of parseOptions(question.options)" class="form-check">
+              <input type="radio" 
+                     class="form-check-input" 
+                     name="question_{{question.id}}" 
+                     [value]="opt"
+                     [(ngModel)]="answers[i]"
+                     [required]="question.required">
+              <label class="form-check-label">{{opt}}</label>
             </div>
           </div>
           
-          <!-- Survey Questions -->
-          <div class="form-section" *ngIf="(selectedSurvey.questions || []).length > 0">
-            <h3>Survey Questions</h3>
-            
-            <div *ngFor="let question of (selectedSurvey.questions || []); let i = index" class="question-item">
-              <label class="question-label">
-                {{ question.questionText }}
-                <span *ngIf="question.required" class="required-star">*</span>
-              </label>
-              
-              <div [ngSwitch]="question.questionType">
-                <!-- TEXT type -->
-                <input *ngSwitchCase="'TEXT'" 
-                       type="text" 
-                       [(ngModel)]="responses[i]" 
-                       [name]="'question_' + i"
-                       class="form-control"
-                       [required]="question.required">
-                
-                <!-- SINGLE_CHOICE (Radio buttons) -->
-                <div *ngSwitchCase="'SINGLE_CHOICE'" class="radio-group">
-                  <label *ngFor="let option of parseOptions(question.options)" class="radio-label">
-                    <input type="radio" 
-                           [(ngModel)]="responses[i]" 
-                           [name]="'question_' + i"
-                           [value]="option"
-                           [required]="question.required">
-                    {{ option }}
-                  </label>
-                </div>
-                
-                <!-- MULTIPLE_CHOICE (Checkboxes) -->
-                <div *ngSwitchCase="'MULTIPLE_CHOICE'" class="checkbox-group">
-                  <label *ngFor="let option of parseOptions(question.options)" class="checkbox-label">
-                    <input type="checkbox" 
-                           [value]="option"
-                           (change)="updateCheckboxResponse(i, option, $event)"
-                           [required]="question.required">
-                    {{ option }}
-                  </label>
-                </div>
-                
-                <!-- DROPDOWN (Select) -->
-                <select *ngSwitchCase="'DROPDOWN'" 
-                        [(ngModel)]="responses[i]" 
-                        [name]="'question_' + i"
-                        class="form-control"
-                        [required]="question.required">
-                  <option value="">Select an option</option>
-                  <option *ngFor="let option of parseOptions(question.options)" [value]="option">
-                    {{ option }}
-                  </option>
-                </select>
-                
-                <!-- BOOLEAN (Yes/No) -->
-                <div *ngSwitchCase="'BOOLEAN'" class="radio-group">
-                  <label class="radio-label">
-                    <input type="radio" 
-                           [(ngModel)]="responses[i]" 
-                           [name]="'question_' + i"
-                           [value]="true"
-                           [required]="question.required">
-                    Yes
-                  </label>
-                  <label class="radio-label">
-                    <input type="radio" 
-                           [(ngModel)]="responses[i]" 
-                           [name]="'question_' + i"
-                           [value]="false"
-                           [required]="question.required">
-                    No
-                  </label>
-                </div>
-              </div>
+          <!-- Multiple Choice (Checkbox) -->
+          <div *ngIf="question.questionType === 'MULTIPLE_CHOICE'">
+            <div *ngFor="let opt of parseOptions(question.options)" class="form-check">
+              <input type="checkbox" 
+                     class="form-check-input" 
+                     [value]="opt"
+                     (change)="onCheckboxChange(i, opt, $event)"
+                     [required]="question.required">
+              <label class="form-check-label">{{opt}}</label>
             </div>
           </div>
-          
-          <div class="form-group">
-            <label>Additional Notes (Optional)</label>
-            <textarea [(ngModel)]="additionalNotes" 
-                      name="additionalNotes"
-                      class="form-control" 
-                      rows="3"
-                      placeholder="Any additional comments or suggestions?"></textarea>
-          </div>
-          
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" (click)="closeSurvey()">Cancel</button>
-            <button type="submit" class="btn-primary" [disabled]="submitting">
-              <span *ngIf="submitting" class="spinner-small"></span>
-              <span *ngIf="!submitting">Submit Survey</span>
-              <span *ngIf="submitting">Submitting...</span>
-            </button>
-          </div>
-        </form>
+        </div>
+      </div>
+      
+      <!-- Submit Button -->
+      <div class="d-grid gap-2">
+        <button class="btn btn-success btn-lg" (click)="submitSurvey()" [disabled]="submitting">
+          <span *ngIf="submitting" class="spinner-border spinner-border-sm me-2"></span>
+          {{ submitting ? 'Submitting...' : 'Submit Survey' }}
+        </button>
       </div>
     </div>
   </div>
