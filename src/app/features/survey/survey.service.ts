@@ -1,3 +1,4 @@
+// survey.service.ts
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -11,7 +12,7 @@ export interface Question {
   required: boolean;
 }
 
-export interface Survey {
+export interface SurveyResponse {
   id?: number;
   title: string;
   description: string;
@@ -19,19 +20,9 @@ export interface Survey {
   endDate: string;
   active?: boolean;
   questions: Question[];
-}
-
-export interface SurveyResponse {
-  id: number;
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  active: boolean;
-  questions: Question[];
   createdAt?: string;
+  updatedAt?: string; // Added this property
 }
-
 
 export interface SurveyResponseData {
   id: number;
@@ -63,8 +54,6 @@ export interface Slot {
   toLocation: string;
 }
 
-
-
 export interface SubmissionData {
   studentId: string;
   studentName: string;
@@ -82,11 +71,11 @@ export class SurveyService {
   constructor(private http: HttpClient) {}
 
   // Manager endpoints
-  createSurvey(data: Survey): Observable<SurveyResponse> {
+  createSurvey(data: SurveyResponse): Observable<SurveyResponse> {
     return this.http.post<SurveyResponse>(this.baseUrl, data);
   }
 
-  updateSurvey(id: number, data: Survey): Observable<SurveyResponse> {
+  updateSurvey(id: number, data: SurveyResponse): Observable<SurveyResponse> {
     return this.http.put<SurveyResponse>(`${this.baseUrl}/${id}`, data);
   }
 
@@ -112,10 +101,10 @@ export class SurveyService {
   }
 
   getSurveyResponses(surveyId: number): Observable<SurveyResponseData[]> {
-  return this.http.get<SurveyResponseData[]>(`${this.baseUrl}/${surveyId}/responses`);
-}
+    return this.http.get<SurveyResponseData[]>(`${this.baseUrl}/${surveyId}/responses`);
+  }
 
-getAllResponses(): Observable<SurveyResponseData[]> {
-  return this.http.get<SurveyResponseData[]>(`${this.baseUrl}/all-responses`);
-}
+  getAllResponses(): Observable<SurveyResponseData[]> {
+    return this.http.get<SurveyResponseData[]>(`${this.baseUrl}/all-responses`);
+  }
 }

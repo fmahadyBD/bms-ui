@@ -1,448 +1,254 @@
-<!-- src/app/features/bus-slot/bus-slot/bus-slot.html -->
 <div class="slot-container">
+  <!-- Page Header -->
   <div class="page-header">
     <div class="header-title">
-      <span class="title-icon">⏰</span>
-      <h1>Bus Slot Management</h1>
+      <div class="title-icon">
+        <i class="fas fa-bus-simple"></i>
+      </div>
+      <h1>Bus Slot Manager</h1>
     </div>
-    <div class="header-actions">
-      <button class="btn-filter" (click)="openFilterModal()">
-        <span>🔍</span> Filter
-      </button>
-      <button class="btn-add" (click)="openAddModal()">
-        <span>➕</span> Add New Slot
+    <div>
+      <button class="btn-add" (click)="openCreateModal()">
+        <i class="fas fa-plus"></i> New Bus Slot
       </button>
     </div>
   </div>
 
   <!-- Statistics Cards -->
-  <div class="stats-grid" *ngIf="statistics">
+  <div class="stats-grid">
     <div class="stat-card">
-      <div class="stat-icon">📊</div>
+      <div class="stat-icon"><i class="fas fa-bus"></i></div>
       <div class="stat-info">
-        <h3>{{ statistics.totalSlots }}</h3>
-        <p>Total Slots</p>
+        <h3>{{ totalBuses }}</h3>
+        <p>Total Buses</p>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon">✅</div>
+      <div class="stat-icon"><i class="fas fa-play-circle"></i></div>
       <div class="stat-info">
-        <h3>{{ statistics.activeSlots }}</h3>
-        <p>Active Slots</p>
+        <h3>{{ activeCount }}</h3>
+        <p>Active</p>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon">❌</div>
+      <div class="stat-icon"><i class="fas fa-ban"></i></div>
       <div class="stat-info">
-        <h3>{{ statistics.inactiveSlots }}</h3>
-        <p>Inactive Slots</p>
+        <h3>{{ inactiveCount }}</h3>
+        <p>Inactive</p>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon">🪑</div>
+      <div class="stat-icon"><i class="fas fa-chair"></i></div>
       <div class="stat-info">
-        <h3>{{ statistics.fullSlots }}</h3>
-        <p>Full Slots</p>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">🔄</div>
-      <div class="stat-info">
-        <h3>{{ statistics.regularSlots }}</h3>
-        <p>Regular Slots</p>
+        <h3>{{ fullCount }}</h3>
+        <p>Full Booked</p>
       </div>
     </div>
   </div>
 
   <!-- Filter Bar -->
-  <div class="filter-bar" *ngIf="filterForm.routeId || filterForm.status || filterForm.fromTime">
-    <span class="filter-label">Active Filters:</span>
-    <span class="filter-tag" *ngIf="filterForm.routeId">
-      Route: {{ getRouteName(filterForm.routeId) }}
-    </span>
-    <span class="filter-tag" *ngIf="filterForm.status">
-      Status: {{ filterForm.status }}
-    </span>
-    <span class="filter-tag" *ngIf="filterForm.fromTime">
-      Time: {{ filterForm.fromTime }} - {{ filterForm.toTime }}
-    </span>
-    <button class="clear-filters" (click)="clearFilters()">Clear All</button>
-  </div>
-
-  <!-- Loading State -->
-  <div *ngIf="loading" class="loading-spinner">
-    <div class="spinner"></div>
-    <p>Loading slots...</p>
+  <div class="filter-bar">
+    <span class="filter-label"><i class="fas fa-filter"></i> Status Filter:</span>
+    <button class="filter-tag" [class.active]="currentFilter === 'all'" (click)="setFilter('all')">ALL</button>
+    <button class="filter-tag" [class.active]="currentFilter === 'active'" (click)="setFilter('active')">ACTIVE</button>
+    <button class="filter-tag" [class.active]="currentFilter === 'inactive'" (click)="setFilter('inactive')">INACTIVE</button>
+    <button class="filter-tag" [class.active]="currentFilter === 'full'" (click)="setFilter('full')">FULL</button>
+    <button class="filter-tag" [class.active]="currentFilter === 'cancelled'" (click)="setFilter('cancelled')">CANCELLED</button>
+    <button class="clear-filters" (click)="setFilter('all')">
+      <i class="fas fa-times-circle"></i> Clear
+    </button>
   </div>
 
   <!-- Slots Grid -->
-  <div *ngIf="!loading && slots.length > 0" class="slots-grid">
-    <div class="slot-card" *ngFor="let slot of slots">
+  <div class="slots-grid">
+    <div *ngFor="let slot of filteredSlots" class="slot-card">
       <div class="slot-card-header">
-        <div class="slot-icon">⏰</div>
-        <div class="slot-info">
-          <h3>{{ slot.slotName }}</h3>
-          <p class="slot-route">{{ getRouteName(slot.route.id) }}</p>
+        <div class="slot-icon">
+          <i class="fas fa-bus-alt"></i>
         </div>
-        <div class="status-badge" [class]="getStatusClass(slot.status)">
-          {{ slot.status }}
+        <div class="slot-info">
+          <h3>{{ slot.busNumber }}</h3>
+          <div class="slot-route">
+            <i class="fas fa-route"></i> {{ slot.route }}
+          </div>
+        </div>
+        <div>
+          <span class="status-badge" [class.status-active]="slot.status === 'active'"
+                [class.status-inactive]="slot.status === 'inactive'"
+                [class.status-full]="slot.status === 'full'"
+                [class.status-cancelled]="slot.status === 'cancelled'">
+            {{ slot.status }}
+          </span>
         </div>
       </div>
       
       <div class="slot-card-body">
         <div class="info-row">
-          <span class="info-label">🚌 Bus:</span>
-          <span class="info-value">{{ getBusName(slot.bus?.id) }}</span>
+          <span class="info-label"><i class="fas fa-user"></i> Driver</span>
+          <span class="info-value">{{ slot.driver || '—' }}</span>
         </div>
         <div class="info-row">
-          <span class="info-label">📍 From:</span>
-          <span class="info-value">{{ slot.fromLocation }}</span>
+          <span class="info-label"><i class="fas fa-clock"></i> Departure</span>
+          <span class="info-value">{{ slot.departureTime || 'N/A' }}</span>
         </div>
         <div class="info-row">
-          <span class="info-label">📍 To:</span>
-          <span class="info-value">{{ slot.toLocation }}</span>
+          <span class="info-label"><i class="fas fa-users"></i> Seats</span>
+          <span class="info-value">{{ slot.booked }} / {{ slot.capacity }}</span>
         </div>
         <div class="info-row">
-          <span class="info-label">⏰ Pickup:</span>
-          <span class="info-value">{{ formatTime(slot.pickupTime) }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">⏰ Drop:</span>
-          <span class="info-value">{{ formatTime(slot.dropTime) }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">🔄 Regular:</span>
-          <span class="info-value">{{ slot.isRegular ? 'Yes' : 'No' }}</span>
-        </div>
-        <div class="info-row" *ngIf="slot.isRegular && slot.regularDays">
-          <span class="info-label">📅 Days:</span>
-          <span class="info-value">{{ slot.regularDays }}</span>
+          <span class="info-label"><i class="fas fa-info-circle"></i> Description</span>
+          <span class="info-value">{{ slot.description || '—' }}</span>
         </div>
       </div>
       
       <div class="slot-card-footer">
-        <select class="status-select" [value]="slot.status" (change)="updateStatus(slot, $event)">
-          <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+        <select class="status-select" [value]="slot.status" (change)="changeStatus(slot.id, $any($event.target).value)">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="full">Full</option>
+          <option value="cancelled">Cancelled</option>
         </select>
         <div class="action-buttons">
-          <button class="btn-view" (click)="viewDetails(slot)" title="View Details">👁️</button>
-          <button class="btn-edit" (click)="editSlot(slot)" title="Edit Slot">✏️</button>
-          <button class="btn-delete" (click)="confirmDelete(slot)" title="Delete Slot">🗑️</button>
+          <button class="btn-view" (click)="openViewModal(slot)">
+            <i class="fas fa-eye"></i>
+          </button>
+          <button class="btn-edit" (click)="openEditModal(slot)">
+            <i class="fas fa-pencil-alt"></i>
+          </button>
+          <button class="btn-delete" (click)="deleteSlot(slot.id)">
+            <i class="fas fa-trash-alt"></i>
+          </button>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- Empty State -->
-  <div *ngIf="!loading && slots.length === 0" class="empty-state">
-    <div class="empty-icon">⏰</div>
-    <h3>No Bus Slots Found</h3>
-    <p>Click "Add New Slot" to create your first bus slot.</p>
+    
+    <div *ngIf="filteredSlots.length === 0" class="empty-state">
+      <i class="fas fa-calendar-times empty-icon"></i>
+      <h3>No slots found</h3>
+      <p>Try adjusting filter or add a new bus slot.</p>
+    </div>
   </div>
 </div>
 
-<!-- Add Slot Modal -->
-<div class="modal-overlay" *ngIf="showAddModal" (click)="closeAddModal()">
+<!-- Modal Overlay -->
+<div *ngIf="isModalOpen" class="modal-overlay" (click)="closeModal()">
   <div class="modal-container" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>➕ Add New Bus Slot</h3>
-      <button class="modal-close" (click)="closeAddModal()">✕</button>
+      <h3>
+        <i class="fas" [class.fa-plus-circle]="modalMode === 'create'"
+           [class.fa-pen]="modalMode === 'edit'"
+           [class.fa-eye]="modalMode === 'view'"></i>
+        {{ modalMode === 'create' ? 'Create New Bus Slot' : modalMode === 'edit' ? 'Edit Bus Slot' : 'Slot Details' }}
+      </h3>
+      <button class="modal-close" (click)="closeModal()">
+        <i class="fas fa-times"></i>
+      </button>
     </div>
+    
     <div class="modal-body">
-      <form (ngSubmit)="saveSlot()">
+      <!-- View Mode -->
+      <div *ngIf="modalMode === 'view' && selectedSlot" class="details-card">
+        <div class="detail-row">
+          <label>Bus Number</label>
+          <span>{{ selectedSlot.busNumber }}</span>
+        </div>
+        <div class="detail-row">
+          <label>Route</label>
+          <span>{{ selectedSlot.route }}</span>
+        </div>
+        <div class="detail-row">
+          <label>Driver</label>
+          <span>{{ selectedSlot.driver || '—' }}</span>
+        </div>
+        <div class="detail-row">
+          <label>Capacity</label>
+          <span>{{ selectedSlot.capacity }}</span>
+        </div>
+        <div class="detail-row">
+          <label>Booked Seats</label>
+          <span>{{ selectedSlot.booked }}</span>
+        </div>
+        <div class="detail-row">
+          <label>Status</label>
+          <span class="status-badge" [class.status-active]="selectedSlot.status === 'active'"
+                [class.status-inactive]="selectedSlot.status === 'inactive'"
+                [class.status-full]="selectedSlot.status === 'full'"
+                [class.status-cancelled]="selectedSlot.status === 'cancelled'">
+            {{ selectedSlot.status }}
+          </span>
+        </div>
+        <div class="detail-row">
+          <label>Departure Time</label>
+          <span>{{ selectedSlot.departureTime || 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+          <label>Description</label>
+          <span>{{ selectedSlot.description || '—' }}</span>
+        </div>
+      </div>
+      
+      <!-- Create/Edit Mode -->
+      <form *ngIf="modalMode !== 'view'" #slotForm="ngForm">
         <div class="form-row">
           <div class="form-group">
-            <label>🗺️ Route *</label>
-            <select [(ngModel)]="slotForm.routeId" name="routeId" class="form-control" required>
-              <option [value]="0">Select Route</option>
-              <option *ngFor="let route of routes" [value]="route.id">
-                {{ route.routeName }} ({{ route.busNo }})
-              </option>
+            <label>Bus Number *</label>
+            <input type="text" class="form-control" [(ngModel)]="formData.busNumber" name="busNumber" required>
+          </div>
+          <div class="form-group">
+            <label>Route *</label>
+            <input type="text" class="form-control" [(ngModel)]="formData.route" name="route" required>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Driver</label>
+            <input type="text" class="form-control" [(ngModel)]="formData.driver" name="driver">
+          </div>
+          <div class="form-group">
+            <label>Departure Time</label>
+            <input type="text" class="form-control" [(ngModel)]="formData.departureTime" name="departureTime" placeholder="e.g., 09:30 AM">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Capacity</label>
+            <input type="number" class="form-control" [(ngModel)]="formData.capacity" name="capacity" required>
+          </div>
+          <div class="form-group">
+            <label>Booked Seats</label>
+            <input type="number" class="form-control" [(ngModel)]="formData.booked" name="booked">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Status</label>
+            <select class="form-control" [(ngModel)]="formData.status" name="status">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="full">Full</option>
+              <option value="cancelled">Cancelled</option>
             </select>
           </div>
           <div class="form-group">
-            <label>🚌 Bus (Optional)</label>
-            <select [(ngModel)]="slotForm.busId" name="busId" class="form-control">
-              <option [value]="undefined">None</option>
-              <option *ngFor="let bus of buses" [value]="bus.id">
-                {{ bus.busName }} ({{ bus.busNumber }})
-              </option>
-            </select>
+            <label>Description</label>
+            <input type="text" class="form-control" [(ngModel)]="formData.description" name="description">
           </div>
-        </div>
-        
-        <div class="form-group">
-          <label>⏰ Slot Name *</label>
-          <input type="text" [(ngModel)]="slotForm.slotName" name="slotName" class="form-control" required placeholder="e.g., Morning Express">
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>📍 From Location *</label>
-            <input type="text" [(ngModel)]="slotForm.fromLocation" name="fromLocation" class="form-control" required>
-          </div>
-          <div class="form-group">
-            <label>📍 To Location *</label>
-            <input type="text" [(ngModel)]="slotForm.toLocation" name="toLocation" class="form-control" required>
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>⏰ Pickup Time *</label>
-            <input type="time" [(ngModel)]="slotForm.pickupTime" name="pickupTime" class="form-control" required>
-          </div>
-          <div class="form-group">
-            <label>⏰ Drop Time</label>
-            <input type="time" [(ngModel)]="slotForm.dropTime" name="dropTime" class="form-control">
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>📊 Status</label>
-            <select [(ngModel)]="slotForm.status" name="status" class="form-control">
-              <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>🔄 Regular Slot</label>
-            <select [(ngModel)]="slotForm.isRegular" name="isRegular" class="form-control">
-              <option [value]="true">Yes</option>
-              <option [value]="false">No</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="form-group" *ngIf="slotForm.isRegular">
-          <label>📅 Regular Days</label>
-          <select [(ngModel)]="slotForm.regularDays" name="regularDays" class="form-control">
-            <option *ngFor="let option of regularDaysOptions" [value]="option.value">{{ option.label }}</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label>📝 Description</label>
-          <textarea [(ngModel)]="slotForm.description" name="description" class="form-control" rows="3" 
-                    placeholder="Additional details about this slot..."></textarea>
         </div>
         
         <div class="modal-actions">
-          <button type="button" class="btn-cancel" (click)="closeAddModal()">Cancel</button>
-          <button type="submit" class="btn-save" [disabled]="actionLoading">
-            💾 {{ actionLoading ? 'Saving...' : 'Save Slot' }}
+          <button type="button" class="btn-cancel" (click)="closeModal()">Cancel</button>
+          <button type="button" class="btn-save" (click)="saveSlot()" [disabled]="!slotForm.form.valid">
+            {{ modalMode === 'create' ? 'Create Slot' : 'Save Changes' }}
           </button>
         </div>
       </form>
-    </div>
-  </div>
-</div>
-
-<!-- Edit Slot Modal -->
-<div class="modal-overlay" *ngIf="showEditModal" (click)="closeEditModal()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>✏️ Edit Bus Slot</h3>
-      <button class="modal-close" (click)="closeEditModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <form (ngSubmit)="updateSlot()">
-        <div class="form-row">
-          <div class="form-group">
-            <label>🗺️ Route *</label>
-            <select [(ngModel)]="slotForm.routeId" name="routeId" class="form-control" required>
-              <option [value]="0">Select Route</option>
-              <option *ngFor="let route of routes" [value]="route.id">
-                {{ route.routeName }} ({{ route.busNo }})
-              </option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>🚌 Bus (Optional)</label>
-            <select [(ngModel)]="slotForm.busId" name="busId" class="form-control">
-              <option [value]="undefined">None</option>
-              <option *ngFor="let bus of buses" [value]="bus.id">
-                {{ bus.busName }} ({{ bus.busNumber }})
-              </option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <label>⏰ Slot Name *</label>
-          <input type="text" [(ngModel)]="slotForm.slotName" name="slotName" class="form-control" required>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>📍 From Location *</label>
-            <input type="text" [(ngModel)]="slotForm.fromLocation" name="fromLocation" class="form-control" required>
-          </div>
-          <div class="form-group">
-            <label>📍 To Location *</label>
-            <input type="text" [(ngModel)]="slotForm.toLocation" name="toLocation" class="form-control" required>
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>⏰ Pickup Time *</label>
-            <input type="time" [(ngModel)]="slotForm.pickupTime" name="pickupTime" class="form-control" required>
-          </div>
-          <div class="form-group">
-            <label>⏰ Drop Time</label>
-            <input type="time" [(ngModel)]="slotForm.dropTime" name="dropTime" class="form-control">
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>📊 Status</label>
-            <select [(ngModel)]="slotForm.status" name="status" class="form-control">
-              <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>🔄 Regular Slot</label>
-            <select [(ngModel)]="slotForm.isRegular" name="isRegular" class="form-control">
-              <option [value]="true">Yes</option>
-              <option [value]="false">No</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="form-group" *ngIf="slotForm.isRegular">
-          <label>📅 Regular Days</label>
-          <select [(ngModel)]="slotForm.regularDays" name="regularDays" class="form-control">
-            <option *ngFor="let option of regularDaysOptions" [value]="option.value">{{ option.label }}</option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label>📝 Description</label>
-          <textarea [(ngModel)]="slotForm.description" name="description" class="form-control" rows="3"></textarea>
-        </div>
-        
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" (click)="closeEditModal()">Cancel</button>
-          <button type="submit" class="btn-save" [disabled]="actionLoading">
-            💾 {{ actionLoading ? 'Updating...' : 'Update Slot' }}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Details Modal -->
-<div class="modal-overlay" *ngIf="showDetailsModal" (click)="closeDetailsModal()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>⏰ Bus Slot Details</h3>
-      <button class="modal-close" (click)="closeDetailsModal()">✕</button>
-    </div>
-    <div class="modal-body" *ngIf="selectedSlot">
-      <div class="details-card">
-        <div class="detail-row"><label>Slot Name:</label><span>{{ selectedSlot.slotName }}</span></div>
-        <div class="detail-row"><label>Route:</label><span>{{ getRouteName(selectedSlot.route.id) }}</span></div>
-        <div class="detail-row"><label>Bus:</label><span>{{ getBusName(selectedSlot.bus?.id) }}</span></div>
-        <div class="detail-row"><label>From:</label><span>{{ selectedSlot.fromLocation }}</span></div>
-        <div class="detail-row"><label>To:</label><span>{{ selectedSlot.toLocation }}</span></div>
-        <div class="detail-row"><label>Pickup Time:</label><span>{{ formatTime(selectedSlot.pickupTime) }}</span></div>
-        <div class="detail-row"><label>Drop Time:</label><span>{{ formatTime(selectedSlot.dropTime) }}</span></div>
-        <div class="detail-row"><label>Status:</label><span class="status-badge" [class]="getStatusClass(selectedSlot.status)">{{ selectedSlot.status }}</span></div>
-        <div class="detail-row"><label>Regular:</label><span>{{ selectedSlot.isRegular ? 'Yes' : 'No' }}</span></div>
-        <div class="detail-row" *ngIf="selectedSlot.isRegular"><label>Regular Days:</label><span>{{ selectedSlot.regularDays }}</span></div>
-        <div class="detail-row" *ngIf="selectedSlot.description"><label>Description:</label><span>{{ selectedSlot.description }}</span></div>
-        <div class="detail-row"><label>Created:</label><span>{{ selectedSlot.createdAt | date:'medium' }}</span></div>
-        <div class="detail-row"><label>Updated:</label><span>{{ selectedSlot.updatedAt | date:'medium' }}</span></div>
+      
+      <div *ngIf="modalMode === 'view'" class="modal-actions">
+        <button class="btn-cancel" (click)="closeModal()">Close</button>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- Delete Confirmation Modal -->
-<div class="modal-overlay" *ngIf="showDeleteModal" (click)="closeDeleteModal()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>⚠️ Confirm Delete</h3>
-      <button class="modal-close" (click)="closeDeleteModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <p>Are you sure you want to delete slot <strong>{{ selectedSlot?.slotName }}</strong>?</p>
-      <p class="warning-text">This action cannot be undone!</p>
-      <div class="modal-actions">
-        <button class="btn-cancel" (click)="closeDeleteModal()">Cancel</button>
-        <button class="btn-delete-confirm" (click)="deleteSlot()" [disabled]="actionLoading">
-          🗑️ {{ actionLoading ? 'Deleting...' : 'Delete Permanently' }}
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Filter Modal -->
-<div class="modal-overlay" *ngIf="showFilterModal" (click)="closeFilterModal()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>🔍 Filter Slots</h3>
-      <button class="modal-close" (click)="closeFilterModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <form (ngSubmit)="applyFilters()">
-        <div class="form-group">
-          <label>🗺️ Route</label>
-          <select [(ngModel)]="filterForm.routeId" name="routeId" class="form-control">
-            <option [value]="undefined">All Routes</option>
-            <option *ngFor="let route of routes" [value]="route.id">
-              {{ route.routeName }} ({{ route.busNo }})
-            </option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label>🚌 Bus</label>
-          <select [(ngModel)]="filterForm.busId" name="busId" class="form-control">
-            <option [value]="undefined">All Buses</option>
-            <option *ngFor="let bus of buses" [value]="bus.id">
-              {{ bus.busName }} ({{ bus.busNumber }})
-            </option>
-          </select>
-        </div>
-        
-        <div class="form-group">
-          <label>📊 Status</label>
-          <select [(ngModel)]="filterForm.status" name="status" class="form-control">
-            <option [value]="undefined">All Status</option>
-            <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
-          </select>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>⏰ From Time</label>
-            <input type="time" [(ngModel)]="filterForm.fromTime" name="fromTime" class="form-control">
-          </div>
-          <div class="form-group">
-            <label>⏰ To Time</label>
-            <input type="time" [(ngModel)]="filterForm.toTime" name="toTime" class="form-control">
-          </div>
-        </div>
-        
-        <div class="form-group">
-          <label>🔄 Slot Type</label>
-          <select [(ngModel)]="filterForm.isRegular" name="isRegular" class="form-control">
-            <option [value]="undefined">All</option>
-            <option [value]="true">Regular Only</option>
-            <option [value]="false">Non-Regular Only</option>
-          </select>
-        </div>
-        
-        <div class="modal-actions">
-          <button type="button" class="btn-cancel" (click)="closeFilterModal()">Cancel</button>
-          <button type="submit" class="btn-save">Apply Filters</button>
-        </div>
-      </form>
     </div>
   </div>
 </div>

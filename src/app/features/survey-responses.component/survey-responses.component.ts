@@ -37,7 +37,7 @@ interface EnhancedResponse extends SurveyResponseData {
 })
 export class SurveyResponsesComponent implements OnInit {
   surveys: SurveyResponse[] = [];
-  selectedSurveyId: number | null = null;
+  selectedSurveyId: number | null = null;  // Fixed: Changed to number | null
   selectedSurvey: SurveyResponse | null = null;
   responses: EnhancedResponse[] = [];
   filteredResponses: EnhancedResponse[] = [];
@@ -89,13 +89,13 @@ export class SurveyResponsesComponent implements OnInit {
         this.surveys = surveys;
         this.loading = false;
         
-        if (surveys && surveys.length > 0) {
+        if (surveys && surveys.length > 0 && surveys[0].id) {  // Fixed: Added null check
           console.log('Found ' + surveys.length + ' surveys');
           // Auto-select the first survey
-          this.selectedSurveyId = surveys[0].id;
+          this.selectedSurveyId = surveys[0].id;  // Fixed: Now safe because we checked
           this.selectedSurvey = surveys[0];
           console.log('Auto-selected survey:', this.selectedSurvey);
-          this.loadResponses(surveys[0].id);
+          this.loadResponses(surveys[0].id);  // Fixed: Pass the id directly
         } else {
           this.errorMessage = 'No surveys found. Please create a survey first.';
         }
@@ -138,7 +138,7 @@ export class SurveyResponsesComponent implements OnInit {
     const surveyId = parseInt(event.target.value);
     console.log('Survey selected from dropdown:', surveyId);
     
-    if (surveyId) {
+    if (surveyId && !isNaN(surveyId)) {  // Fixed: Added validation
       this.selectedSurveyId = surveyId;
       this.selectedSurvey = this.surveys.find(s => s.id === surveyId) || null;
       console.log('Selected survey:', this.selectedSurvey);
@@ -146,7 +146,12 @@ export class SurveyResponsesComponent implements OnInit {
     }
   }
 
-  loadResponses(surveyId: number) {
+  loadResponses(surveyId: number) {  // Fixed: Parameter type is number
+    if (!surveyId) {  // Fixed: Added guard clause
+      console.warn('Invalid survey ID');
+      return;
+    }
+    
     this.loading = true;
     this.errorMessage = '';
     console.log('Loading responses for survey ID:', surveyId);
@@ -337,5 +342,10 @@ export class SurveyResponsesComponent implements OnInit {
   getSlotNameById(slotId: number): string {
     const slot = this.slots.find(s => s.id === slotId);
     return slot ? slot.slotName : 'Unknown';
+  }
+
+  // Helper method to safely get questions length
+  getQuestionsLength(): number {
+    return this.selectedSurvey?.questions ? this.selectedSurvey.questions.length : 0;
   }
 }

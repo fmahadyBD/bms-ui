@@ -217,93 +217,109 @@ export class SurveyComponent implements OnInit {
       return options.split(',').map(opt => opt.trim());
     }
   }
-
-  submitSurvey() {
-    if (!this.selectedSurvey) return;
-    
-    // Validate route selection
-    if (!this.selectedRouteId) {
-      this.errorMessage = 'Please select a route.';
-      setTimeout(() => { this.errorMessage = ''; }, 3000);
-      return;
-    }
-    
-    // Validate slot selection
-    if (!this.selectedSlotId) {
-      this.errorMessage = 'Please select a time slot.';
-      setTimeout(() => { this.errorMessage = ''; }, 3000);
-      return;
-    }
-    
-    // Validate required questions
-    const questions = this.selectedSurvey.questions || [];
-    const unansweredRequired = questions.some((question, index) => {
-      const answer = this.answers[index];
-      const isEmpty = answer === undefined || answer === null || answer === '';
-      const isArrayEmpty = Array.isArray(answer) && answer.length === 0;
-      return question.required && (isEmpty || isArrayEmpty);
-    });
-    
-    if (unansweredRequired) {
-      this.errorMessage = 'Please answer all required questions.';
-      setTimeout(() => { this.errorMessage = ''; }, 3000);
-      return;
-    }
-    
-    this.submitting = true;
-    
-    // Format answers - convert arrays to JSON strings
-    const formattedAnswers: { [key: number]: any } = {};
-    for (const key in this.answers) {
-      const value = this.answers[key];
-      if (Array.isArray(value)) {
-        formattedAnswers[key] = JSON.stringify(value);
-      } else {
-        formattedAnswers[key] = value;
-      }
-    }
-    
-    // Clean phone number
-    let cleanPhone = this.studentData.studentPhone.replace(/\D/g, '');
-    if (cleanPhone.length === 13 && cleanPhone.startsWith('880')) {
-      cleanPhone = '0' + cleanPhone.substring(3);
-    }
-    
-    const submissionData = {
-      studentId: this.studentData.studentId,
-      studentName: this.studentData.studentName,
-      studentEmail: this.studentData.studentEmail,
-      studentPhone: cleanPhone,
-      selectedRouteId: this.selectedRouteId,
-      selectedSlotId: this.selectedSlotId,
-      answers: formattedAnswers
-    };
-    
-    console.log('Submitting survey:', submissionData);
-    
-    this.surveyService.submitResponse(this.selectedSurvey.id, submissionData).subscribe({
-      next: () => {
-        this.submitting = false;
-        alert('Survey submitted successfully! Thank you for your response.');
-        this.closeSurvey();
-        this.loadActiveSurveys();
-      },
-      error: (error) => {
-        this.submitting = false;
-        console.error('Error submitting survey:', error);
-        
-        let errorMsg = 'Failed to submit survey. ';
-        if (error.error?.message) {
-          errorMsg += error.error.message;
-        } else if (error.message) {
-          errorMsg += error.message;
-        } else {
-          errorMsg += 'Please try again later.';
-        }
-        
-        this.errorMessage = errorMsg;
-        setTimeout(() => { this.errorMessage = ''; }, 5000);
-      }
-    });
+submitSurvey() {
+  // Fixed: Check if selectedSurvey exists and has an id
+  if (!this.selectedSurvey) {
+    this.errorMessage = 'No survey selected.';
+    setTimeout(() => { this.errorMessage = ''; }, 3000);
+    return;
   }
+  
+  // Fixed: Check if selectedSurvey.id exists
+  if (!this.selectedSurvey.id) {
+    this.errorMessage = 'Invalid survey ID. Please try again.';
+    setTimeout(() => { this.errorMessage = ''; }, 3000);
+    return;
+  }
+  
+  // Validate route selection
+  if (!this.selectedRouteId) {
+    this.errorMessage = 'Please select a route.';
+    setTimeout(() => { this.errorMessage = ''; }, 3000);
+    return;
+  }
+  
+  // Validate slot selection
+  if (!this.selectedSlotId) {
+    this.errorMessage = 'Please select a time slot.';
+    setTimeout(() => { this.errorMessage = ''; }, 3000);
+    return;
+  }
+  
+  // Validate required questions
+  const questions = this.selectedSurvey.questions || [];
+  const unansweredRequired = questions.some((question, index) => {
+    const answer = this.answers[index];
+    const isEmpty = answer === undefined || answer === null || answer === '';
+    const isArrayEmpty = Array.isArray(answer) && answer.length === 0;
+    return question.required && (isEmpty || isArrayEmpty);
+  });
+  
+  if (unansweredRequired) {
+    this.errorMessage = 'Please answer all required questions.';
+    setTimeout(() => { this.errorMessage = ''; }, 3000);
+    return;
+  }
+  
+  this.submitting = true;
+  
+  // Format answers - convert arrays to JSON strings
+  const formattedAnswers: { [key: number]: any } = {};
+  for (const key in this.answers) {
+    const value = this.answers[key];
+    if (Array.isArray(value)) {
+      formattedAnswers[key] = JSON.stringify(value);
+    } else {
+      formattedAnswers[key] = value;
+    }
+  }
+  
+  // Clean phone number
+  let cleanPhone = this.studentData.studentPhone.replace(/\D/g, '');
+  if (cleanPhone.length === 13 && cleanPhone.startsWith('880')) {
+    cleanPhone = '0' + cleanPhone.substring(3);
+  }
+  
+  const submissionData = {
+    studentId: this.studentData.studentId,
+    studentName: this.studentData.studentName,
+    studentEmail: this.studentData.studentEmail,
+    studentPhone: cleanPhone,
+    selectedRouteId: this.selectedRouteId,
+    selectedSlotId: this.selectedSlotId,
+    answers: formattedAnswers
+  };
+  
+  console.log('Submitting survey:', submissionData);
+  
+  // Fixed: Use non-null assertion or safe access
+  // Since we already checked selectedSurvey.id exists above, we can use ! 
+  // or store it in a variable
+  const surveyId = this.selectedSurvey.id; // This is now safe because we checked above
+  
+  this.surveyService.submitResponse(surveyId, submissionData).subscribe({
+    next: () => {
+      this.submitting = false;
+      alert('Survey submitted successfully! Thank you for your response.');
+      this.closeSurvey();
+      this.loadActiveSurveys();
+    },
+    error: (error) => {
+      this.submitting = false;
+      console.error('Error submitting survey:', error);
+      
+      let errorMsg = 'Failed to submit survey. ';
+      if (error.error?.message) {
+        errorMsg += error.error.message;
+      } else if (error.message) {
+        errorMsg += error.message;
+      } else {
+        errorMsg += 'Please try again later.';
+      }
+      
+      this.errorMessage = errorMsg;
+      setTimeout(() => { this.errorMessage = ''; }, 5000);
+    }
+  });
+}
 }

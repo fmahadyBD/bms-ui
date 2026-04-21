@@ -111,4 +111,13 @@ export class AuthService {
     const decoded = this.getDecodedToken();
     return decoded?.studentId ?? null;
   }
+
+  getManagerIdFromToken(): string | null {
+    const decoded = this.getDecodedToken();
+    return decoded?.managerId ?? null;
+  }
+
+  changePassword(passwords: { oldPassword: string; newPassword: string }): Observable<any> {
+    return this.http.put(`${this.baseUrl}/auth/change-password`, passwords);
+  }
 }

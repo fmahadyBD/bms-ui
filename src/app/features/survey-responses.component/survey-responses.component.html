@@ -38,8 +38,7 @@
         <div class="stat-label">Unique Students</div>
       </div>
       <div class="stat-card">
-        <div class="stat-value">{{(statistics.totalResponses / (selectedSurvey.questions?.length || 1)).toFixed(1)}}</div>
-        <div class="stat-label">Avg. Response Rate</div>
+<div class="stat-value">{{(statistics.totalResponses / ((selectedSurvey.questions ? selectedSurvey.questions.length : 1))).toFixed(1)}}</div>        <div class="stat-label">Avg. Response Rate</div>
       </div>
     </div>
 

@@ -1,87 +1,218 @@
-<div class="container mt-4">
-  <div class="row">
-    <!-- Create Survey Form -->
-    <div class="col-md-5">
-      <div class="card">
-        <div class="card-header bg-primary text-white">
-          <h4>Create Transport Survey</h4>
+<div class="survey-management-container">
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">📋 Survey Management</h1>
+      <p class="page-description">Create, edit, and manage transport surveys for students</p>
+    </div>
+
+    <div class="row">
+      <!-- Create/Edit Survey Form -->
+      <div class="col-lg-5 col-md-12">
+        <div class="card form-card">
+          <div class="card-header" [ngClass]="isEditing ? 'bg-warning' : 'bg-primary'">
+            <div class="header-icon">
+              {{ isEditing ? '✏️' : '📝' }}
+            </div>
+            <h4 class="header-title">{{ isEditing ? 'Edit Survey' : 'Create New Survey' }}</h4>
+          </div>
+          <div class="card-body">
+            <form [formGroup]="surveyForm" (ngSubmit)="createOrUpdateSurvey()">
+              <div class="form-group">
+                <label class="form-label required">Survey Title</label>
+                <input type="text" class="form-control" formControlName="title" placeholder="e.g., Student Transport Satisfaction Survey">
+                <div *ngIf="surveyForm.get('title')?.invalid && surveyForm.get('title')?.touched" class="error-message">
+                  Title is required
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea class="form-control" formControlName="description" rows="3" 
+                  placeholder="Describe the purpose of this survey..."></textarea>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="form-label required">Start Date</label>
+                    <input type="date" class="form-control" formControlName="startDate">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-group">
+                    <label class="form-label required">End Date</label>
+                    <input type="date" class="form-control" formControlName="endDate">
+                  </div>
+                </div>
+              </div>
+              
+              <div class="questions-section">
+                <div class="section-header">
+                  <h5 class="section-title">📊 Survey Questions</h5>
+                  <button type="button" class="btn-add-question" (click)="addQuestion()">
+                    + Add Question
+                  </button>
+                </div>
+                
+                <div formArrayName="questions">
+                  <div *ngFor="let q of questions.controls; let i=index" [formGroupName]="i" class="question-card">
+                    <div class="question-header">
+                      <span class="question-number">Question {{i+1}}</span>
+                      <button type="button" class="btn-remove" (click)="removeQuestion(i)">🗑️</button>
+                    </div>
+                    <div class="form-group">
+                      <input type="text" class="form-control" formControlName="questionText" 
+                        placeholder="Enter your question">
+                    </div>
+                    <div class="row">
+                      <div class="col-md-5">
+                        <select class="form-control" formControlName="questionType">
+                          <option value="TEXT">📝 Text Answer</option>
+                          <option value="SINGLE_CHOICE">🔘 Single Choice</option>
+                          <option value="MULTIPLE_CHOICE">☑️ Multiple Choice</option>
+                        </select>
+                      </div>
+                      <div class="col-md-5">
+                        <input type="text" class="form-control" formControlName="options" 
+                          placeholder="Options (comma separated)">
+                      </div>
+                      <div class="col-md-2">
+                        <label class="checkbox-label">
+                          <input type="checkbox" formControlName="required">
+                          <span>Required</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div *ngIf="questions.length === 0" class="empty-questions">
+                  No questions added yet. Click "Add Question" to start building your survey.
+                </div>
+              </div>
+              
+              <div class="form-actions">
+                <button type="button" class="btn-secondary" *ngIf="isEditing" (click)="resetForm()">
+                  Cancel Edit
+                </button>
+                <button type="submit" class="btn-primary" [ngClass]="isEditing ? 'btn-warning' : 'btn-primary'">
+                  {{ isEditing ? '✏️ Update Survey' : '📤 Create Survey' }}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-        <div class="card-body">
-          <form [formGroup]="surveyForm" (ngSubmit)="createSurvey()">
-            <div class="mb-3">
-              <label>Title</label>
-              <input type="text" class="form-control" formControlName="title">
-            </div>
-            
-            <div class="mb-3">
-              <label>Description</label>
-              <textarea class="form-control" formControlName="description"></textarea>
-            </div>
-            
-            <div class="row mb-3">
-              <div class="col">
-                <label>Start Date</label>
-                <input type="date" class="form-control" formControlName="startDate">
-              </div>
-              <div class="col">
-                <label>End Date</label>
-                <input type="date" class="form-control" formControlName="endDate">
-              </div>
-            </div>
-            
-            <h5>Questions</h5>
-            <div formArrayName="questions">
-              <div *ngFor="let q of questions.controls; let i=index" [formGroupName]="i" class="border p-3 mb-2">
-                <div class="mb-2">
-                  <input type="text" class="form-control" formControlName="questionText" placeholder="Question">
+      </div>
+      
+      <!-- List of Surveys -->
+      <div class="col-lg-7 col-md-12">
+        <div class="card surveys-card">
+          <div class="card-header bg-info">
+            <div class="header-icon">📋</div>
+            <h4 class="header-title">Existing Surveys</h4>
+            <span class="survey-count">{{surveys.length}} Total</span>
+          </div>
+          <div class="card-body">
+            <div *ngFor="let survey of surveys" class="survey-item">
+              <div class="survey-content">
+                <div class="survey-header">
+                  <h5 class="survey-title">{{survey.title}}</h5>
+                  <div class="survey-actions">
+                    <button class="action-btn view-btn" (click)="viewDetails(survey)" title="View Details">
+                      👁️
+                    </button>
+                    <button class="action-btn edit-btn" (click)="editSurvey(survey)" title="Edit Survey">
+                      ✏️
+                    </button>
+                    <button class="action-btn delete-btn" (click)="deleteSurvey(survey.id!)" title="Delete Survey">
+                      🗑️
+                    </button>
+                  </div>
                 </div>
-                <div class="row">
-                  <div class="col">
-                    <select class="form-control" formControlName="questionType">
-                      <option value="TEXT">Text Answer</option>
-                      <option value="SINGLE_CHOICE">Single Choice</option>
-                      <option value="MULTIPLE_CHOICE">Multiple Choice</option>
-                    </select>
-                  </div>
-                  <div class="col">
-                    <input type="text" class="form-control" formControlName="options" placeholder="Options (comma separated)">
-                  </div>
-                  <div class="col-auto">
-                    <label class="me-2">Required</label>
-                    <input type="checkbox" formControlName="required">
-                  </div>
-                  <div class="col-auto">
-                    <button type="button" class="btn btn-danger btn-sm" (click)="removeQuestion(i)">Remove</button>
-                  </div>
+                <p class="survey-description">{{survey.description || 'No description provided'}}</p>
+                <div class="survey-meta">
+                  <span class="meta-icon">📅</span>
+                  <span>{{formatDate(survey.startDate)}} - {{formatDate(survey.endDate)}}</span>
+                  <span class="meta-icon ms-3">❓</span>
+                  <span>{{survey.questions ? survey.questions.length : 0}} questions</span>
+                  <span class="status-badge" [ngClass]="getStatusBadgeClass(survey.active || false)">
+                    {{getStatusText(survey.active || false)}}
+                  </span>
                 </div>
               </div>
             </div>
-            
-            <button type="button" class="btn btn-secondary mb-3" (click)="addQuestion()">+ Add Question</button>
-            <button type="submit" class="btn btn-primary w-100">Create Survey</button>
-          </form>
+            <div *ngIf="surveys.length === 0" class="empty-state">
+              <div class="empty-icon">📭</div>
+              <p>No surveys created yet</p>
+              <small>Create your first survey using the form</small>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    
-    <!-- List of Surveys -->
-    <div class="col-md-7">
-      <div class="card">
-        <div class="card-header bg-info text-white">
-          <h4>Existing Surveys</h4>
+  </div>
+</div>
+
+<!-- Survey Details Modal -->
+<div class="modal-overlay" *ngIf="showDetailsModal" (click)="closeDetails()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header bg-info">
+      <h5 class="modal-title">Survey Details</h5>
+      <button class="modal-close" (click)="closeDetails()">✕</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedSurvey">
+      <div class="detail-section">
+        <h3 class="detail-title">{{selectedSurvey.title}}</h3>
+        <p class="detail-description">{{selectedSurvey.description || 'No description provided'}}</p>
+      </div>
+      
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>Start Date</label>
+          <div>{{formatDate(selectedSurvey.startDate)}}</div>
         </div>
-        <div class="card-body">
-          <div *ngFor="let survey of surveys" class="border-bottom mb-3 pb-2">
-            <h5>{{survey.title}}</h5>
-            <p>{{survey.description}}</p>
-            <small>Date: {{survey.startDate}} to {{survey.endDate}}</small>
-            <button class="btn btn-danger btn-sm float-end" (click)="deleteSurvey(survey.id)">Delete</button>
+        <div class="detail-item">
+          <label>End Date</label>
+          <div>{{formatDate(selectedSurvey.endDate)}}</div>
+        </div>
+        <div class="detail-item">
+          <label>Status</label>
+          <div>
+            <span class="status-badge" [ngClass]="getStatusBadgeClass(selectedSurvey.active || false)">
+              {{getStatusText(selectedSurvey.active || false)}}
+            </span>
           </div>
-          <div *ngIf="surveys.length === 0" class="text-center text-muted">
-            No surveys created yet
+        </div>
+        <div class="detail-item">
+          <label>Created</label>
+          <div>{{formatDate(selectedSurvey.createdAt || '')}}</div>
+        </div>
+        <div class="detail-item" *ngIf="selectedSurvey.updatedAt">
+          <label>Last Updated</label>
+          <div>{{formatDate(selectedSurvey.updatedAt)}}</div>
+        </div>
+      </div>
+      
+      <div class="detail-section">
+        <h4>Questions ({{selectedSurvey.questions ? selectedSurvey.questions.length : 0}})</h4>
+        <div *ngFor="let q of selectedSurvey.questions; let i=index" class="question-detail-item">
+          <div class="question-number">Q{{i+1}}.</div>
+          <div class="question-content">
+            <div class="question-text">{{q.questionText}}</div>
+            <div class="question-meta">
+              <span class="question-type">{{getQuestionTypeLabel(q.questionType)}}</span>
+              <span class="question-required" [class.required]="q.required">
+                {{q.required ? 'Required' : 'Optional'}}
+              </span>
+              <span *ngIf="q.options" class="question-options">Options: {{q.options}}</span>
+            </div>
           </div>
         </div>
       </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeDetails()">Close</button>
+      <button class="btn-warning" (click)="editSurvey(selectedSurvey!); closeDetails()">Edit Survey</button>
     </div>
   </div>
 </div>

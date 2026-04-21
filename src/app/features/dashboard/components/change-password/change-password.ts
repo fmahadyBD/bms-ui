@@ -1,7 +1,6 @@
 import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { StudentService } from '../../services/student';
 import { AuthService } from '../../../auth/services/auth';
 
 @Component({
@@ -18,11 +17,9 @@ export class ChangePasswordComponent implements OnInit {
   successMessage = '';
   errorMessage = '';
   loading = false;
-  private studentId: string = '';
 
   constructor(
     private fb: FormBuilder,
-    private studentService: StudentService,
     private authService: AuthService
   ) {
     this.passwordForm = this.fb.group({
@@ -33,12 +30,7 @@ export class ChangePasswordComponent implements OnInit {
   }
 
   ngOnInit() {
-    const id = this.authService.getStudentIdFromToken();
-    if (id) {
-      this.studentId = id;
-    } else {
-      this.errorMessage = 'Could not identify student. Please login again.';
-    }
+    // No need to get studentId separately - authService will handle it
   }
 
   passwordMatchValidator(g: FormGroup) {
@@ -58,11 +50,6 @@ export class ChangePasswordComponent implements OnInit {
       return;
     }
 
-    if (!this.studentId) {
-      this.errorMessage = 'Unable to identify student. Please refresh and try again.';
-      return;
-    }
-
     this.loading = true;
     this.successMessage = '';
     this.errorMessage = '';
@@ -72,7 +59,8 @@ export class ChangePasswordComponent implements OnInit {
       newPassword: this.passwordForm.value.newPassword
     };
 
-    this.studentService.changePassword(this.studentId, passwords).subscribe({
+    // Use AuthService's changePassword method instead
+    this.authService.changePassword(passwords).subscribe({
       next: (response) => {
         this.successMessage = 'Password changed successfully!';
         this.passwordForm.reset();
@@ -85,9 +73,11 @@ export class ChangePasswordComponent implements OnInit {
       },
       error: (error) => {
         if (error.status === 400) {
-          if (error.error?.includes('Old password')) {
+          if (error.error?.message?.includes('Old password') || error.error?.includes('Old password')) {
             this.errorMessage = 'Current password is incorrect';
-          } else if (error.error) {
+          } else if (error.error?.message) {
+            this.errorMessage = error.error.message;
+          } else if (typeof error.error === 'string') {
             this.errorMessage = error.error;
           } else {
             this.errorMessage = 'Invalid password. Password must be at least 8 characters.';
